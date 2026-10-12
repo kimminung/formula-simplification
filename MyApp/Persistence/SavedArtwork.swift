@@ -5,9 +5,9 @@ enum ArtworkKind: String, Codable, Sendable {
     case draw, convert
 }
 
-/// A saved Draw or Convert result. Draw stores the LayeredFormula's fields directly; Convert
-/// stores the fitted FourierSeries (and the term count in use) as JSON, since SwiftData models
-/// can't hold arbitrary struct arrays as typed properties.
+/// A saved Draw or Convert result. Draw stores its (possibly several, mixed-together) formula
+/// components as JSON; Convert stores the fitted FourierSeries and the term count in use, also
+/// as JSON — SwiftData models can't hold arbitrary struct arrays as typed properties.
 @Model
 final class SavedArtwork {
     var kind: ArtworkKind
@@ -15,12 +15,7 @@ final class SavedArtwork {
     var createdAt: Date
     @Attribute(.externalStorage) var thumbnailData: Data?
 
-    var drawXExpression: String?
-    var drawYExpression: String?
-    var drawTStart: Double?
-    var drawTEnd: Double?
-    var drawSamplesPerLayer: Int?
-    var drawKCount: Int?
+    var drawComponentsJSON: Data?
 
     var fourierTermsJSON: Data?
     var fourierSampleCount: Int?
@@ -33,25 +28,17 @@ final class SavedArtwork {
         self.createdAt = createdAt
     }
 
-    func apply(formula: LayeredFormula) {
-        drawXExpression = formula.xExpression
-        drawYExpression = formula.yExpression
-        drawTStart = formula.tStart
-        drawTEnd = formula.tEnd
-        drawSamplesPerLayer = formula.samplesPerLayer
-        drawKCount = formula.kCount
+    func apply(components: [LayeredFormula]) {
+        drawComponentsJSON = try? JSONEncoder().encode(components)
     }
 
-    var storedFormula: LayeredFormula? {
-        guard let x = drawXExpression, let y = drawYExpression,
-              let tStart = drawTStart, let tEnd = drawTEnd,
-              let samples = drawSamplesPerLayer, let kCount = drawKCount else { return nil }
-        return LayeredFormula(
-            xExpression: x, yExpression: y,
-            tStart: tStart, tEnd: tEnd,
-            samplesPerLayer: samples, kCount: kCount,
-            title: title
-        )
+    var storedComponents: [LayeredFormula]? {
+        guard let data = drawComponentsJSON,
+              let components = try? JSONDecoder().decode([LayeredFormula].self, from: data),
+              !components.isEmpty else {
+            return nil
+        }
+        return components
     }
 
     func apply(series: FourierSeries, termCount: Int) {

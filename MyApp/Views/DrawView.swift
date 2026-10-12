@@ -2,11 +2,12 @@ import SwiftUI
 import SwiftData
 import UIKit
 
-/// Formula → image. Edits a LayeredFormula and renders it live via MathCanvasRenderer.
+/// Formula → image. Edits one or more LayeredFormula components — mixed together into a single
+/// picture, Naderi-Yeganeh style — and renders them live via MathCanvasRenderer.
 struct DrawView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.modelContext) private var modelContext
-    @State private var model = DrawModel(formula: FormulaPresets.all[0].formula)
+    @State private var model = DrawModel(components: FormulaPresets.all[0].components)
     @State private var canvasRect: CGRect = .zero
     @State private var savedMessage: String?
     @FocusState private var isEditorFocused: Bool
@@ -23,7 +24,7 @@ struct DrawView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         ForEach(FormulaPresets.all) { preset in
-                            Button(preset.title) { model.formula = preset.formula }
+                            Button(preset.title) { model.replaceAllComponents(preset.components) }
                         }
                     } label: {
                         Label("프리셋", systemImage: "sparkles")
@@ -56,13 +57,13 @@ struct DrawView: View {
                 Text(savedMessage ?? "")
             }
         }
-        .onChange(of: model.formula) { _, _ in
+        .onChange(of: model.components) { _, _ in
             model.scheduleRender(in: canvasRect)
         }
-        .onChange(of: appModel.pendingDrawFormula) { _, newValue in
+        .onChange(of: appModel.pendingDrawComponents) { _, newValue in
             guard let newValue else { return }
-            model.formula = newValue
-            appModel.pendingDrawFormula = nil
+            model.replaceAllComponents(newValue)
+            appModel.pendingDrawComponents = nil
         }
     }
 
@@ -124,12 +125,14 @@ struct DrawView: View {
         @Bindable var drawModel = model
         return ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                formulaField(title: "x(t,k) =", text: $drawModel.formula.xExpression)
-                formulaField(title: "y(t,k) =", text: $drawModel.formula.yExpression)
+                componentPicker
+
+                formulaField(title: "x(t,k) =", text: $drawModel.selectedComponent.xExpression)
+                formulaField(title: "y(t,k) =", text: $drawModel.selectedComponent.yExpression)
 
                 Stepper(
-                    "레이어 수 k: \(model.formula.kCount)",
-                    value: $drawModel.formula.kCount,
+                    "레이어 수 k: \(model.selectedComponent.kCount)",
+                    value: $drawModel.selectedComponent.kCount,
                     in: 1...LayeredFormula.maxLayers,
                     step: layerStep
                 )
@@ -139,12 +142,52 @@ struct DrawView: View {
             }
             .padding(14)
         }
-        .frame(maxHeight: 220)
+        .frame(maxHeight: 260)
         .background(.thinMaterial)
     }
 
+    /// Lets the user mix several formula components into one picture: tap a chip to edit it,
+    /// "+" to add another, trash to remove the selected one (when more than one exists).
+    private var componentPicker: some View {
+        HStack(spacing: 8) {
+            Text("구성요소")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(Array(model.components.enumerated()), id: \.element.id) { index, _ in
+                        Button {
+                            model.selectedComponentIndex = index
+                        } label: {
+                            Text("\(index + 1)")
+                                .font(.caption.weight(.semibold))
+                                .frame(width: 26, height: 26)
+                                .background(
+                                    index == model.selectedComponentIndex ? Color.accentColor : Color.secondary.opacity(0.15),
+                                    in: Circle()
+                                )
+                                .foregroundStyle(index == model.selectedComponentIndex ? .white : .primary)
+                        }
+                        .accessibilityLabel("구성요소 \(index + 1)")
+                    }
+                }
+            }
+            Spacer()
+            Button { model.addComponent() } label: {
+                Image(systemName: "plus.circle.fill")
+            }
+            .accessibilityLabel("구성요소 추가")
+            if model.components.count > 1 {
+                Button(role: .destructive) { model.removeSelectedComponent() } label: {
+                    Image(systemName: "trash.circle.fill")
+                }
+                .accessibilityLabel("선택한 구성요소 삭제")
+            }
+        }
+    }
+
     private var layerStep: Int {
-        model.formula.kCount < 50 ? 1 : max(model.formula.kCount / 20, 1)
+        model.selectedComponent.kCount < 50 ? 1 : max(model.selectedComponent.kCount / 20, 1)
     }
 
     private func formulaField(title: String, text: Binding<String>) -> some View {
@@ -165,7 +208,7 @@ struct DrawView: View {
             Label("수식 표기", systemImage: "function")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text(FormulaFormatter.notation(for: model.formula))
+            Text(FormulaFormatter.notation(for: model.components))
                 .font(.system(.footnote, design: .serif))
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
@@ -203,9 +246,9 @@ struct DrawView: View {
             savedMessage = "이미지를 만들지 못했습니다."
             return
         }
-        let title = model.formula.title.isEmpty ? "그리기 작품" : model.formula.title
+        let title = model.components.first?.title.isEmpty == false ? model.components[0].title : "그리기 작품"
         let artwork = SavedArtwork(kind: .draw, title: title, thumbnailData: thumbnailData)
-        artwork.apply(formula: model.formula)
+        artwork.apply(components: model.components)
         modelContext.insert(artwork)
         savedMessage = "갤러리에 저장했습니다."
     }

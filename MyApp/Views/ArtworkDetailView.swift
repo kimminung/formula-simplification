@@ -57,7 +57,7 @@ struct ArtworkDetailView: View {
 
     private var canReload: Bool {
         switch artwork.kind {
-        case .draw: artwork.storedFormula != nil
+        case .draw: artwork.storedComponents != nil
         case .convert: artwork.storedSeries != nil
         }
     }
@@ -65,8 +65,8 @@ struct ArtworkDetailView: View {
     private func load() {
         switch artwork.kind {
         case .draw:
-            if let formula = artwork.storedFormula {
-                appModel.pendingDrawFormula = formula
+            if let components = artwork.storedComponents {
+                appModel.pendingDrawComponents = components
                 appModel.selectedTab = .draw
             }
         case .convert:

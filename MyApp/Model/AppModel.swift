@@ -18,6 +18,6 @@ final class AppModel {
 
     /// Set by GalleryView when the user reopens a saved Draw/Convert artwork; the respective
     /// tab's view consumes and clears it.
-    var pendingDrawFormula: LayeredFormula?
+    var pendingDrawComponents: [LayeredFormula]?
     var pendingConvertLoad: PendingConvertLoad?
 }

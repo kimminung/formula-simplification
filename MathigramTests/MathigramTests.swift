@@ -117,6 +117,34 @@ struct FormulaFormatterTests {
         #expect(FormulaFormatter.format("2*pi*t") == "2·π·t")
         #expect(FormulaFormatter.format("sqrt(t)") == "√(t)")
     }
+
+    @Test func singleComponentNotationHasNoSectionHeaders() {
+        let formula = LayeredFormula(xExpression: "cos(t)", yExpression: "sin(t)")
+        #expect(FormulaFormatter.notation(for: [formula]) == FormulaFormatter.notation(for: formula))
+        #expect(!FormulaFormatter.notation(for: [formula]).contains("구성요소"))
+    }
+
+    @Test func mixedComponentsGetNumberedSections() {
+        let a = LayeredFormula(xExpression: "cos(t)", yExpression: "sin(t)")
+        let b = LayeredFormula(xExpression: "t", yExpression: "0")
+        let notation = FormulaFormatter.notation(for: [a, b])
+        #expect(notation.contains("구성요소 1"))
+        #expect(notation.contains("구성요소 2"))
+    }
+}
+
+struct MixedFormulaRenderingTests {
+    @Test func combinesLayersFromEveryComponent() throws {
+        var a = LayeredFormula(xExpression: "cos(t)", yExpression: "sin(t)")
+        a.kCount = 3
+        var b = LayeredFormula(xExpression: "t", yExpression: "0")
+        b.kCount = 5
+        let layers = try MathCanvasRenderer.fittedLayers(
+            for: [a, b],
+            fitting: CGRect(x: 0, y: 0, width: 300, height: 300)
+        )
+        #expect(layers.count == 8)
+    }
 }
 
 struct PolylineResamplerTests {

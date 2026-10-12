@@ -1,7 +1,7 @@
 import Foundation
 import CoreGraphics
 
-struct FourierTerm: Identifiable, Sendable, Codable, Equatable {
+nonisolated struct FourierTerm: Identifiable, Sendable, Codable, Equatable {
     let id: UUID
     /// Signed frequency — how many times this epicycle turns per period.
     let k: Int

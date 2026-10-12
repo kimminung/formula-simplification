@@ -6,8 +6,15 @@ enum MathCanvasRenderer {
     /// Evaluates the formula, then fits every point into `rect`.
     /// `nonisolated` so this can run on a background Task.detached despite the project's
     /// default main-actor isolation.
-    nonisolated static func fittedLayers(for formula: LayeredFormula, fitting rect: CGRect) throws -> [[CGPoint]] {
-        fit(layers: try formula.evaluate(), in: rect)
+    /// Evaluates every component and concatenates their layers before fitting, so components with
+    /// very different scales (e.g. a heart plus a wide ring of small circles) still share one
+    /// consistent frame — mixing several formulas into a single picture.
+    nonisolated static func fittedLayers(for components: [LayeredFormula], fitting rect: CGRect) throws -> [[CGPoint]] {
+        var all: [[CGPoint]] = []
+        for component in components {
+            all.append(contentsOf: try component.evaluate())
+        }
+        return fit(layers: all, in: rect)
     }
 
     /// Scales/translates an arbitrary set of polylines to fit within `rect`, preserving aspect
