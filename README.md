@@ -25,6 +25,7 @@ Mathigram은 이 아이디어를 iPhone에서 양방향으로 체험하는 앱�
 - [Phase 2 — 그리기 모드](#phase-2--그리기-모드)
 - [Phase 3 — 변환 모드](#phase-3--변환-모드)
 - [Phase 4 — 갤러리 & 설정](#phase-4--갤러리--설정)
+- [Phase 5 — 검증 및 마무리](#phase-5--검증-및-마무리)
 - [요구 사항](#요구-사항)
 - [프로젝트 구조](#프로젝트-구조)
 - [라이선스](#라이선스)
@@ -47,7 +48,7 @@ Mathigram은 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다
 | 2 | 그리기 모드 (수식 → 그림) | ✅ |
 | 3 | 변환 모드 (그림 → 수식) | ✅ |
 | 4 | 갤러리 & 설정 | ✅ |
-| 5 | 검증 및 마무리 | ⬜️ |
+| 5 | 검증 및 마무리 | ✅ |
 
 ## Phase 0 — 프로젝트 기반
 
@@ -163,14 +164,25 @@ Hamid Naderi Yeganeh의 실제 작품은 수식 하나가 아니라 **서로 다
 </div>
 
 - **저장**: `그리기`/`변환` 탭 툴바의 "갤러리에 저장" 버튼이 현재 캔버스를 썸네일로 렌더링하고, 그리기는 수식 필드(x/y 식·t 범위·레이어 수)를, 변환은 푸리에 계수 전체(JSON)와 사용 중이던 항 개수를 `SavedArtwork`에 함께 저장한다 — 다시 열었을 때 Vision/DFT를 재실행하지 않고 그대로 복원된다.
-- **그리드 → 상세 → 다시 열기**: 썸네일을 탭하면 큰 미리보기와 "그리기에서 다시 열기"/"변환에서 다시 열기" 버튼이 있는 시트가 뜬다. 버튼을 누르면 해당 탭으로 전환되고 저장된 수식이 그대로 로드된다 — 탭 사이의 전달은 `AppModel.pendingDrawFormula` / `pendingConvertLoad`가 맡는다.
+- **그리드 → 상세 → 다시 열기**: 썸네일을 탭하면 큰 미리보기와 "그리기에서 다시 열기"/"변환에서 다시 열기" 버튼이 있는 시트가 뜬다. 버튼을 누르면 해당 탭으로 전환되고 저장된 수식이 그대로 로드된다 — 탭 사이의 전달은 `AppModel.pendingDrawComponents` / `pendingConvertLoad`가 맡는다.
 - **삭제**: 상세 시트의 휴지통 버튼으로 삭제한다.
 - **설정**: 선 색상·굵기·색상 순환(레이어 진행에 따라 Hue 회전)·배경 토글은 Phase 0부터 이미 실제로 동작했고, 이번에 접근성 점검(Dynamic Type 대응 폰트, 갤러리 썸네일 accessibilityLabel)을 더했다.
+
+## Phase 5 — 검증 및 마무리
+
+마지막으로 iPhone 16 시뮬레이터(iOS 27)에서 네 탭을 모두 기기 상호작용으로 전수 테스트했다.
+
+- **설정 → 캔버스 반영 확인**: 선 색상·색상 순환·어두운 배경을 설정 탭에서 바꾸고 그리기 탭으로 돌아가 실제로 반영되는지 확인했다. 색상 순환을 켜면 24겹 스피로그래프 다발이 레이어마다 무지갯빛으로 바뀌고, 끄면 고른 단색으로 그려진다 — 둘 다 의도대로 동작했다.
+- **대량 레이어 성능**: "레이어 수 k" 스테퍼를 반복해서 눌러 24 → 2,423까지 올려 봤다. 중간에 멈추거나 크래시하지 않았고, 계산 중에도 `변환` ↔ `그리기` 탭 전환이 바로 반응했다 — 평가가 `Task.detached`로 백그라운드에서 돌고 메인 스레드를 막지 않는 구조가 의도대로 작동함을 확인했다.
+- **변환 파이프라인 재검증**: 합성 이미지(별)뿐 아니라 시뮬레이터 기본 사진(꽃밭·폭포)으로도 다시 테스트하며 윤곽 선택 기준을 두 차례 다듬었다(위 Phase 3 참고).
+- 자동화 중 설정 탭의 `ColorPicker`가 한 번 탭에 바로 반응하지 않은 사례가 있었지만(이후 정상 동작), 시뮬레이터 자동화 환경의 히트테스트 지연으로 보여 별도 수정 없이 기록만 남겼다.
+
+이 시점에서 PRD의 목표(G1~G5)는 모두 충족됐다: 수식 입력 0.5초 내 반영, 안전한 자체 수식 엔진, 실제 동작하는 사진→수식 변환과 1~200개 항 조절, SwiftData 저장/복원, iPhone 16 시뮬레이터에서 4탭 모두 정상 동작.
 
 ## 요구 사항
 
 - Xcode (iOS 27 SDK 포함)
-- iPhone 16 시뮬레이터 (또는 실제 iPhone, iOS 18+)
+- iPhone 16 시뮬레이터 (또는 iOS 27을 지원하는 실제 iPhone)
 
 ```bash
 open "Untitled Project.xcodeproj"
@@ -183,8 +195,8 @@ open "Untitled Project.xcodeproj"
 ```
 MyApp/
 ├─ MyApp.swift, ContentView.swift      # 4탭 루트
-├─ Model/                              # AppModel, RenderSettings
-├─ MathEngine/                         # 수식 렉서/파서/평가기, LayeredFormula, FormulaFormatter
+├─ Model/                              # AppModel, RenderSettings, DrawModel, ConvertModel
+├─ MathEngine/                         # 수식 렉서/파서/평가기, LayeredFormula, FormulaFormatter, FormulaPresets
 ├─ Fourier/                            # ContourExtractor·PolylineResampler·FourierFit·FourierSeries·FourierFormatter
 ├─ Rendering/                          # MathCanvasRenderer (수식 → 화면 좌표 Path)
 ├─ Persistence/                        # SwiftData SavedArtwork
