@@ -14,9 +14,9 @@
 
 <br/>
 
-[<img src="Media/Screenshots/demo-thumbnail.png" width="280" alt="데모 영상 재생" />](https://github.com/kimminung/formula-simplification/raw/main/Media/Video/demo.mp4)
+<img src="Media/Video/intro.gif" width="100%" alt="수식단순화 소개 영상 — 그리기(수식 → 그림) · 변환(사진 → 수식) · 갤러리 · 설정" />
 
-<sub>▶︎ 위 썸네일을 누르면 24초 소개 영상이 재생됩니다 — 아이콘 → 그리기(프리셋·수식 혼합) → 변환(스케치·사진) → 갤러리 → 설정 순으로 핵심 기능을 보여준다.</sub>
+<sub>▶︎ 36초 소개 영상 (자동 재생) — 그리기(스피로그래프 24겹 · 카디오이드 실 그림 · 수식 혼합) → 변환(푸리에 에피사이클 · 항 개수 조절 · iPhone 16 실기기 사진) → 갤러리 & 설정. <a href="Media/Video/intro.mp4">고화질 MP4로 보기</a></sub>
 
 <br/><br/>
 

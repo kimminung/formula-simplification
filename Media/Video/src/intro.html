@@ -1,0 +1,265 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#fff;overflow:hidden}canvas{display:block}</style>
+</head><body><canvas id="c" width="1920" height="1080"></canvas>
+<script>
+'use strict';
+const W=1920,H=1080,TAU=Math.PI*2;
+const cv=document.getElementById('c'); const ctx=cv.getContext('2d');
+const INK='#111111', GRAY='#6E6E73', LIGHT='#C7C7CC', FAINT='#EBEBF0', ACCENT='#0A84FF', GREEN='#34C759';
+const F_KR='"Noto Sans CJK KR"', F_EN='Inter', F_MONO='"DejaVu Sans Mono"', F_MATH='"Latin Modern Math"';
+
+// ---------- utils
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const easeOut=t=>1-Math.pow(1-t,3);
+const easeInOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const prog=(t,a,b)=>clamp((t-a)/(b-a),0,1);
+function fade(t,a,b,fi,fo){ if(t<a||t>b) return 0; const i=fi>0?prog(t,a,a+fi):1; const o=fo>0?1-prog(t,b-fo,b):1; return Math.min(i,o); }
+function roundRect(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+function font(weight,size,fam,style){ return `${style||''} ${weight} ${size}px ${fam}`.trim(); }
+function measure(str,size,weight,fam,style){ ctx.font=font(weight,size,fam,style); return ctx.measureText(str).width; }
+function text(str,x,y,o={}){
+  const {size=40,weight=400,fam=F_KR,color=INK,align='left',alpha=1,baseline='alphabetic',ls=0,style=''}=o;
+  if(alpha<=0||!str) return;
+  ctx.save(); ctx.globalAlpha*=alpha; ctx.fillStyle=color; ctx.font=font(weight,size,fam,style);
+  ctx.textAlign=align; ctx.textBaseline=baseline; ctx.letterSpacing=ls+'px'; ctx.fillText(str,x,y); ctx.restore();
+}
+// math typesetting: runs of {t, sub?, sup?, fam?, style?}
+function mathRuns(runs,x,y,size,o={}){
+  const {color=INK,alpha=1,align='left'}=o; if(alpha<=0) return;
+  let total=0; const parts=[];
+  for(const r of runs){ const s=(r.sub||r.sup)?size*0.6:size; const fam=r.fam||F_MATH; const st=r.style!==undefined?r.style:(r.fam?'':'italic'); const w=measure(r.t,s,r.weight||400,fam,st); parts.push({...r,s,fam,st,w}); total+=w; }
+  let cx=align==='center'?x-total/2:align==='right'?x-total:x;
+  ctx.save(); ctx.globalAlpha*=alpha; ctx.fillStyle=color; ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+  for(const p of parts){ ctx.font=font(p.weight||400,p.s,p.fam,p.st); const dy=p.sub?size*0.2:p.sup?-size*0.45:0; ctx.fillText(p.t,cx,y+dy); cx+=p.w; }
+  ctx.restore();
+  return total;
+}
+const up=(t)=>({t,fam:F_MATH,style:''});     // upright math glyph (cos, Σ, digits)
+const it=(t)=>({t});                         // italic variable
+const sub=(t)=>({t,sub:true});
+
+// ---------- geometry (the app's real presets)
+function sample(fx,fy,t0,t1,n){ const pts=[]; for(let i=0;i<=n;i++){ const t=t0+(t1-t0)*i/n; pts.push([fx(t),fy(t)]); } return pts; }
+const HEART=sample(t=>16*Math.pow(Math.sin(t),3), t=>13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t), 0,TAU,300);
+const SPIRO=[]; for(let k=0;k<24;k++){ const r=1+k*0.08, R=5-r; SPIRO.push(sample(t=>R*Math.cos(t)+3*Math.cos(R/r*t), t=>R*Math.sin(t)-3*Math.sin(R/r*t), 0,TAU,240)); }
+const CARD=[]; { const n=200; for(let k=0;k<n;k++){ const a=k*TAU/n, b=k*2*TAU/n; CARD.push([[Math.cos(a),Math.sin(a)],[Math.cos(b),Math.sin(b)]]); } }
+const RING=[]; { const n=40; for(let k=0;k<n;k++){ const cx=22*Math.cos(k*TAU/n), cy=22*Math.sin(k*TAU/n); RING.push(sample(t=>cx+2*Math.cos(t), t=>cy+2*Math.sin(t), 0,TAU,40)); } }
+
+function starContour(N){
+  const raw=[]; for(let i=0;i<10;i++){ const a=Math.PI/2+i*Math.PI/5; const r=i%2===0?1:0.42; raw.push([r*Math.cos(a), r*Math.sin(a)]); } raw.push(raw[0]);
+  const seg=[]; let total=0; for(let i=1;i<raw.length;i++){ const d=Math.hypot(raw[i][0]-raw[i-1][0], raw[i][1]-raw[i-1][1]); seg.push(d); total+=d; }
+  const pts=[]; let si=0, acc=0;
+  for(let j=0;j<N;j++){ const target=total*j/N; while(si<seg.length-1 && acc+seg[si]<target){ acc+=seg[si]; si++; } const f=(target-acc)/seg[si]; const a=raw[si], b=raw[si+1]; pts.push([a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f]); }
+  return pts;
+}
+function dft(pts){
+  const n=pts.length, half=Math.floor(n/2); const terms=[];
+  for(let k=-half;k<n-half;k++){ let re=0,im=0; for(let m=0;m<n;m++){ const ang=-TAU*k*m/n; const [zx,zy]=pts[m]; const c=Math.cos(ang), s=Math.sin(ang); re+=zx*c-zy*s; im+=zx*s+zy*c; }
+    re/=n; im/=n; const amp=Math.hypot(re,im); if(amp>1e-6) terms.push({k,amp,phase:Math.atan2(im,re)}); }
+  terms.sort((a,b)=>b.amp-a.amp); return terms.slice(0,200);
+}
+const STAR=(()=>{ const p=starContour(360); const off=41; return p.slice(off).concat(p.slice(0,off)); })(); const TERMS=dft(STAR);
+function recon(K,t){ let x=0,y=0; for(let i=0;i<K&&i<TERMS.length;i++){ const {k,amp,phase}=TERMS[i]; x+=amp*Math.cos(k*t+phase); y+=amp*Math.sin(k*t+phase); } return [x,y]; }
+function reconCurve(K,n=360){ const pts=[]; for(let i=0;i<=n;i++) pts.push(recon(K,TAU*i/n)); return pts; }
+const RECON_CACHE={}; function reconCached(K){ return RECON_CACHE[K]||(RECON_CACHE[K]=reconCurve(K)); }
+
+function bbox(arr){ let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9; for(const pts of arr) for(const [x,y] of pts){ if(x<minx)minx=x; if(x>maxx)maxx=x; if(y<miny)miny=y; if(y>maxy)maxy=y; } return {minx,maxx,miny,maxy}; }
+function mapper(bb,cx,cy,size){ const w=bb.maxx-bb.minx, h=bb.maxy-bb.miny; const s=size/Math.max(w,h); const mx=(bb.minx+bb.maxx)/2, my=(bb.miny+bb.maxy)/2; const f=([x,y])=>[cx+(x-mx)*s, cy-(y-my)*s]; f.s=s; f.cx=cx; f.cy=cy; return f; }
+function strokePartial(pts,map,p,o={}){
+  if(p<=0) return; const {color=INK,width=2,alpha=1}=o; const n=pts.length; const segs=(n-1)*Math.min(p,1); const full=Math.floor(segs); const frac=segs-full;
+  ctx.save(); ctx.globalAlpha*=alpha; ctx.strokeStyle=color; ctx.lineWidth=width; ctx.lineJoin='round'; ctx.lineCap='round';
+  ctx.beginPath(); const [x0,y0]=map(pts[0]); ctx.moveTo(x0,y0);
+  for(let i=1;i<=full&&i<n;i++){ const [x,y]=map(pts[i]); ctx.lineTo(x,y); }
+  if(full<n-1&&frac>0){ const [xa,ya]=map(pts[full]); const [xb,yb]=map(pts[full+1]); ctx.lineTo(xa+(xb-xa)*frac, ya+(yb-ya)*frac); }
+  ctx.stroke(); ctx.restore();
+}
+// progress of layer k when the whole stack animates with progress P (0..1+spread/N)
+const lp=(P,k,N,spread)=>clamp((P-k/N)/(spread/N),0,1);
+const layersP=(t,a,b,N,spread)=>prog(t,a,b)*(1+spread/N);
+const hueColor=(k,N)=>`hsl(${Math.round(k/N*360)} 85% 48%)`;
+
+// ---------- UI pieces
+const IMG={}; const NAMES=['phase2-draw-spirograph','phase2-draw-cardioid','phase5-draw-composite-mix','phase3-convert-photo-fewterms','phase3-convert-photo-star','phase7-device-suit','phase7-device-dog','phase7-device-cup','phase4-gallery-mixed','phase0-settings','phase6-convert-house-result'];
+window.ready=Promise.all(NAMES.map(n=>new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(); im.onerror=rej; im.src='../../Screenshots/'+n+'.png'; IMG[n]=im; }))).then(()=>document.fonts.ready);
+
+function phone(name,cx,cy,h,alpha=1,dy=0){
+  if(alpha<=0) return; const img=IMG[name]; const ratio=img.width/img.height; const sh=h, sw=h*ratio; const bz=h*0.016; const pw=sw+bz*2, ph=sh+bz*2; const x=cx-pw/2, y=cy-ph/2+dy; const r=pw*0.135;
+  ctx.save(); ctx.globalAlpha*=alpha;
+  ctx.shadowColor='rgba(0,0,0,0.16)'; ctx.shadowBlur=36; ctx.shadowOffsetY=14;
+  roundRect(x,y,pw,ph,r); ctx.fillStyle='#1C1C1E'; ctx.fill();
+  ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetY=0;
+  ctx.save(); roundRect(x+bz,y+bz,sw,sh,r-bz); ctx.clip(); ctx.drawImage(img,x+bz,y+bz,sw,sh); ctx.restore();
+  ctx.lineWidth=1.5; ctx.strokeStyle='#3A3A3C'; roundRect(x,y,pw,ph,r); ctx.stroke();
+  ctx.restore();
+}
+function header(num,title,subtitle,alpha,y=190){
+  if(alpha<=0) return; const x=120;
+  text(num,x,y-88,{size:26,weight:600,fam:F_EN,color:ACCENT,ls:5,alpha});
+  text(title,x,y,{size:72,weight:700,alpha});
+  const w=measure(title,72,700,F_KR);
+  text(subtitle,x+w+34,y-2,{size:34,weight:400,color:GRAY,alpha});
+}
+function pill(x,y,label,value,alpha=1,active=false){
+  if(alpha<=0) return; const lw=measure(label,26,500,F_KR), vw=measure(String(value),34,700,F_EN); const pad=26, gap=16; const w=lw+vw+pad*2+gap, h=62;
+  ctx.save(); ctx.globalAlpha*=alpha; roundRect(x,y,w,h,31); ctx.fillStyle='#F2F2F7'; ctx.fill();
+  text(label,x+pad,y+41,{size:26,weight:500,color:GRAY}); text(String(value),x+pad+lw+gap,y+42,{size:34,weight:700,fam:F_EN,color:active?ACCENT:INK});
+  ctx.restore();
+}
+function toggle(x,y,on,alpha=1){ // on: 0..1
+  if(alpha<=0) return; const w=72,h=42; ctx.save(); ctx.globalAlpha*=alpha;
+  roundRect(x,y,w,h,21); ctx.fillStyle=on>0.5?GREEN:'#E9E9EB'; ctx.fill();
+  const kx=lerp(x+21,x+w-21,easeInOut(on)); ctx.beginPath(); ctx.arc(kx,y+h/2,18,0,TAU); ctx.fillStyle='#fff'; ctx.shadowColor='rgba(0,0,0,0.2)'; ctx.shadowBlur=6; ctx.shadowOffsetY=2; ctx.fill();
+  ctx.restore();
+}
+function caption(str,alpha,y=1010,x=120){ text(str,x,y,{size:30,weight:400,color:GRAY,alpha}); }
+function typed(str,p){ return str.slice(0,Math.floor(p*str.length)); }
+
+// ---------- scenes
+function sceneTitle(t){
+  const map=mapper(bbox([HEART]),600,520,520);
+  const hp=easeInOut(prog(t,0.3,2.6));
+  strokePartial(HEART,map,hp,{width:3.5});
+  const l1='x(t) = 16*sin(t)^3', l2='y(t) = 13*cos(t) - 5*cos(2*t) - 2*cos(3*t) - cos(4*t)';
+  const tp=prog(t,0.3,2.6); const n=Math.floor(tp*(l1.length+l2.length));
+  const s1=l1.slice(0,Math.min(n,l1.length)); const s2=n>l1.length?l2.slice(0,n-l1.length):'';
+  const x0=600-measure(l2,24,400,F_MONO)/2;
+  text(s1,x0,860,{size:24,fam:F_MONO,color:GRAY}); text(s2,x0,900,{size:24,fam:F_MONO,color:GRAY});
+  if(t<2.7){ const onL1=n<=l1.length; const cw=measure(onL1?s1:s2,24,400,F_MONO); ctx.fillStyle=ACCENT; ctx.fillRect(x0+cw+4,(onL1?860:900)-22,3,28); }
+  const tx=1100;
+  let a=easeOut(prog(t,1.4,2.0)); text('수식단순화',tx,480+(1-a)*30,{size:108,weight:700,alpha:a});
+  a=easeOut(prog(t,1.7,2.3)); text('Formula Simplification',tx+4,548+(1-a)*24,{size:42,weight:500,fam:F_EN,color:GRAY,alpha:a});
+  a=prog(t,2.0,2.4); ctx.save(); ctx.globalAlpha*=a; ctx.fillStyle=ACCENT; ctx.fillRect(tx+4,598,72*a,5); ctx.restore();
+  a=easeOut(prog(t,2.3,2.9)); text('수식으로 그리고, 그림을 수식으로.',tx+2,672+(1-a)*24,{size:40,weight:400,alpha:a});
+  a=easeOut(prog(t,2.7,3.3)); text('수식 → 그림  ·  사진 → 수식 — iPhone에서 양방향으로',tx+4,730+(1-a)*20,{size:28,weight:400,color:GRAY,alpha:a});
+}
+
+function sceneDraw(t){
+  header('01','그리기','수식을 쓰면 그림이 된다',1);
+  const C={x:600,y:600,size:540};
+  // beat 1 — spirograph bundle, 24 layers
+  { const a=fade(t,0,4.0,0.35,0.35); if(a>0){ ctx.save(); ctx.globalAlpha*=a;
+    text('x(t,k) = (5-(1+k*0.08))*cos(t) + 3*cos((5-(1+k*0.08))/(1+k*0.08)*t)',120,262,{size:22,fam:F_MONO,color:GRAY});
+    text('y(t,k) = (5-(1+k*0.08))*sin(t) - 3*sin((5-(1+k*0.08))/(1+k*0.08)*t)',120,296,{size:22,fam:F_MONO,color:GRAY});
+    const map=mapper(bbox(SPIRO),C.x,C.y,C.size); const P=layersP(t,0.7,3.3,24,2.5); let count=0;
+    for(let k=0;k<24;k++){ const p=lp(P,k,24,2.5); if(p>0) count++; strokePartial(SPIRO[k],map,p,{width:2}); }
+    pill(120,905,'레이어 수 k',count,1,t<3.4);
+    caption('하나의 수식을 k에 대해 24번 반복해 겹쳐 그린다 — 레이어는 최대 4,000개까지',1);
+    phone('phase2-draw-spirograph',1480,610,720,1,(1-easeOut(prog(t,0,0.6)))*30);
+    ctx.restore(); } }
+  // beat 2 — cardioid string art, 200 straight lines
+  { const a=fade(t,3.7,7.3,0.35,0.35); if(a>0){ ctx.save(); ctx.globalAlpha*=a;
+    text('x(t,k) = (1-t)*cos(k*2*pi/n) + t*cos(k*4*pi/n)',120,262,{size:22,fam:F_MONO,color:GRAY});
+    text('y(t,k) = (1-t)*sin(k*2*pi/n) + t*sin(k*4*pi/n)',120,296,{size:22,fam:F_MONO,color:GRAY});
+    const map=mapper(bbox(CARD),C.x,C.y,C.size); const P=layersP(t,4.2,6.5,200,12); let count=0;
+    for(let k=0;k<200;k++){ const p=lp(P,k,200,12); if(p>0) count++; strokePartial(CARD[k],map,p,{width:1.6}); }
+    pill(120,905,'레이어 수 k',count,1,t<6.6);
+    caption('원 위의 점 k와 2k를 잇는 직선 200개 — 직선만 모여도 곡선(카디오이드)이 보인다',1);
+    phone('phase2-draw-cardioid',1480,610,720,1,(1-easeOut(prog(t,3.7,4.3)))*30);
+    ctx.restore(); } }
+  // beat 3 — composite: heart + ring of 40 circles
+  { const a=fade(t,7.0,10.4,0.35,0.35); if(a>0){ ctx.save(); ctx.globalAlpha*=a;
+    text('① x = 16*sin(t)^3,  y = 13*cos(t) - 5*cos(2*t) - 2*cos(3*t) - cos(4*t)',120,262,{size:22,fam:F_MONO,color:GRAY});
+    text('② x = 22*cos(k*2*pi/n) + 2*cos(t),  y = 22*sin(k*2*pi/n) + 2*sin(t)',120,296,{size:22,fam:F_MONO,color:GRAY});
+    const map=mapper(bbox([HEART,...RING]),C.x,C.y,C.size);
+    strokePartial(HEART,map,easeInOut(prog(t,7.4,8.5)),{width:2.2});
+    const P=layersP(t,8.2,9.6,40,4); for(let k=0;k<40;k++) strokePartial(RING[k],map,lp(P,k,40,4),{width:2});
+    pill(120,905,'구성요소',t<8.2?'①':'① ②',1,false);
+    caption('서로 다른 수식을 구성요소로 섞어 한 그림을 만든다 — 하트 + 작은 원 40개의 고리',1);
+    phone('phase5-draw-composite-mix',1480,610,720,1,(1-easeOut(prog(t,7.0,7.6)))*30);
+    ctx.restore(); } }
+}
+
+const FX_RUNS=[it('x'),up('('),it('t'),up(') = '),up('Σ'),it('r'),sub('k'),up(' cos('),it('k'),it('t'),up(' + '),it('φ'),sub('k'),up(')')];
+const FY_RUNS=[it('y'),up('('),it('t'),up(') = '),up('Σ'),it('r'),sub('k'),up(' sin('),it('k'),it('t'),up(' + '),it('φ'),sub('k'),up(')')];
+function fmt(v,d){ return (v<0?'−':'')+Math.abs(v).toFixed(d); }
+
+function sceneConvert(t){
+  header('02','변환','사진과 그림을 수식으로 되돌린다',1);
+  const C={x:600,y:600,size:520};
+  const map=mapper(bbox([STAR]),C.x,C.y,C.size);
+  // beat 1 — epicycles tracing the star with 40 terms
+  { const a=fade(t,0,5.6,0.35,0.35); if(a>0){ ctx.save(); ctx.globalAlpha*=a;
+    // faint original contour
+    ctx.save(); ctx.setLineDash([6,8]); strokePartial([...STAR,STAR[0]],map,1,{color:LIGHT,width:2}); ctx.restore();
+    const K=40; const th=TAU*prog(t,0.8,4.4);
+    // trace
+    const n=Math.max(2,Math.floor(360*th/TAU)+1); const tr=[]; for(let i=0;i<n;i++) tr.push(recon(K,TAU*Math.min(i,359)/360)); tr.push(recon(K,th));
+    strokePartial(tr,map,1,{width:3});
+    // circles chain
+    let px=0,py=0; ctx.save(); ctx.lineWidth=1.5;
+    for(let i=0;i<K;i++){ const {k,amp,phase}=TERMS[i]; const nx=px+amp*Math.cos(k*th+phase), ny=py+amp*Math.sin(k*th+phase);
+      const [cx,cy]=map([px,py]); const [tx,ty]=map([nx,ny]); const r=amp*map.s;
+      ctx.strokeStyle='rgba(10,132,255,0.45)'; ctx.beginPath(); ctx.arc(cx,cy,r,0,TAU); ctx.stroke();
+      ctx.strokeStyle='rgba(10,132,255,0.8)'; ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(tx,ty); ctx.stroke();
+      px=nx; py=ny; }
+    const [ex,ey]=map([px,py]); ctx.fillStyle=ACCENT; ctx.beginPath(); ctx.arc(ex,ey,6,0,TAU); ctx.fill(); ctx.restore();
+    // right block: formulas + term table
+    const rx=1180; mathRuns(FX_RUNS,rx,400,46); mathRuns(FY_RUNS,rx,466,46);
+    pill(rx,516,'항 개수 K',K,1,true);
+    const fy=640; text('k',rx,fy,{size:26,weight:600,fam:F_EN,color:GRAY}); text('r',rx+130,fy,{size:26,weight:600,fam:F_EN,color:GRAY}); text('φ',rx+300,fy,{size:26,weight:600,fam:F_EN,color:GRAY});
+    ctx.fillStyle=FAINT; ctx.fillRect(rx,fy+14,460,2);
+    for(let i=0;i<6;i++){ const T=TERMS[i]; const y=fy+56+i*40; text(String(T.k),rx,y,{size:26,fam:F_MONO}); text(fmt(T.amp,3),rx+130,y,{size:26,fam:F_MONO}); text(fmt(T.phase,2),rx+300,y,{size:26,fam:F_MONO}); }
+    text('외 34개 항 …',rx,fy+56+6*40,{size:24,color:GRAY});
+    caption('윤곽을 이산 푸리에 변환(DFT)으로 분해하고, 회전하는 원들의 합으로 다시 그린다 — 실제로 동작하는 수학',1);
+    ctx.restore(); } }
+  // beat 2 — term count K morphs the reconstruction
+  { const a=fade(t,5.3,9.5,0.35,0.35); if(a>0){ ctx.save(); ctx.globalAlpha*=a;
+    let K; if(t<5.9) K=40; else if(t<7.2) K=Math.round(lerp(40,3,easeInOut(prog(t,5.9,7.2)))); else if(t<7.7) K=3; else K=Math.round(lerp(3,40,easeInOut(prog(t,7.7,9.0))));
+    ctx.save(); ctx.setLineDash([6,8]); strokePartial([...STAR,STAR[0]],map,1,{color:LIGHT,width:2}); ctx.restore();
+    strokePartial(reconCached(K),map,1,{width:3});
+    pill(120,905,'항 개수 K',K,1,K!==40);
+    // slider
+    const sx=420,sy=936,sw=520; ctx.fillStyle='#E5E5EA'; roundRect(sx,sy-3,sw,6,3); ctx.fill(); const f=(K-1)/(40-1); ctx.fillStyle=ACCENT; roundRect(sx,sy-3,sw*f,6,3); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx+sw*f,sy,14,0,TAU); ctx.fillStyle='#fff'; ctx.shadowColor='rgba(0,0,0,0.25)'; ctx.shadowBlur=8; ctx.shadowOffsetY=2; ctx.fill(); ctx.shadowColor='transparent';
+    caption('항을 줄이면 단순해지고, 늘리면 원본에 가까워진다 — K는 1 ~ 200',1);
+    phone('phase3-convert-photo-fewterms',1320,600,600,1,(1-easeOut(prog(t,5.3,5.9)))*30);
+    phone('phase3-convert-photo-star',1665,600,600,1,(1-easeOut(prog(t,5.45,6.05)))*30);
+    text('K = 4',1320,955,{size:28,weight:600,fam:F_EN,color:GRAY,align:'center'}); text('K = 40',1665,955,{size:28,weight:600,fam:F_EN,color:GRAY,align:'center'});
+    ctx.restore(); } }
+  // beat 3 — real device results
+  { const a=fade(t,9.2,13.6,0.35,0.35); if(a>0){ ctx.save(); ctx.globalAlpha*=a;
+    text('사진 한 장이 수식 수천 개로 분해된다',120,330,{size:40,weight:500});
+    text('iPhone 16 실기기 · 피사체 분리 · 도형마다 독립된 푸리에 급수',120,382,{size:28,color:GRAY});
+    const items=[['phase7-device-suit','정장 인물','도형 27개 · 도형당 192항 · 총 2,509항'],['phase7-device-dog','강아지','도형 35개 · 도형당 40항 · 총 1,400항'],['phase7-device-cup','얼음 컵','도형 40개 · 도형당 111항 · 총 3,387항'],['phase6-convert-house-result','손으로 그린 집','획 4개 → 도형 4개 · 총 160항']];
+    items.forEach((it,i)=>{ const cx=380+i*390; const s=easeOut(prog(t,9.4+i*0.15,10.0+i*0.15)); const h=520; phone(it[0],cx,700,h,s,(1-s)*40);
+      text(it[1],cx,1000,{size:26,weight:600,align:'center',alpha:s}); text(it[2],cx,1036,{size:22,color:GRAY,align:'center',alpha:s}); });
+    ctx.restore(); } }
+}
+
+function sceneGallery(t){
+  header('03','갤러리 & 설정','저장하고, 다시 열고, 색을 바꾼다',1);
+  phone('phase4-gallery-mixed',420,640,600,1,(1-easeOut(prog(t,0,0.6)))*30);
+  phone('phase0-settings',1500,640,600,1,(1-easeOut(prog(t,0.15,0.75)))*30);
+  const map=mapper(bbox(SPIRO),960,600,440); const on=prog(t,1.5,1.9); const sweep=prog(t,1.6,2.5)*24;
+  for(let k=0;k<24;k++){ const col=k<sweep?hueColor(k,24):INK; strokePartial(SPIRO[k],map,1,{width:2,color:col}); }
+  const lw=measure('색상 순환',28,500,F_KR); const bx=960-(lw+18+72)/2; text('색상 순환',bx,929,{size:28,weight:500}); toggle(bx+lw+18,900,on);
+  text('갤러리',420,990,{size:26,weight:600,align:'center',color:GRAY}); text('설정',1500,990,{size:26,weight:600,align:'center',color:GRAY});
+  caption('그리기·변환 결과는 SwiftData에 저장되고, 선 색상·굵기·색상 순환·배경 설정은 두 캔버스에 바로 반영된다',1,1050);
+}
+
+function sceneOutro(t){
+  const map=mapper(bbox([HEART]),960,300,150); strokePartial(HEART,map,easeInOut(prog(t,0.1,1.3)),{width:3});
+  let a=easeOut(prog(t,0.4,1.0)); text('수식단순화',960,520+(1-a)*30,{size:112,weight:700,align:'center',alpha:a});
+  a=easeOut(prog(t,0.7,1.3)); text('Formula Simplification',960,586+(1-a)*24,{size:42,weight:500,fam:F_EN,color:GRAY,align:'center',alpha:a});
+  a=easeOut(prog(t,1.1,1.7)); text('수식으로 그리고, 그림을 수식으로.',960,690+(1-a)*20,{size:40,align:'center',alpha:a});
+  const tags=['iPhone · iOS 27','SwiftUI','Swift 6','Vision + DFT','Apache 2.0'];
+  a=easeOut(prog(t,1.5,2.1)); let widths=tags.map(s=>measure(s,24,500,F_EN)+44); const gap=14; const tot=widths.reduce((p,c)=>p+c,0)+gap*(tags.length-1); let x=960-tot/2;
+  ctx.save(); ctx.globalAlpha*=a; tags.forEach((s,i)=>{ roundRect(x,770+(1-a)*16,widths[i],46,23); ctx.fillStyle='#F2F2F7'; ctx.fill(); text(s,x+22,801+(1-a)*16,{size:24,weight:500,fam:F_EN,color:INK}); x+=widths[i]+gap; }); ctx.restore();
+  a=easeOut(prog(t,1.9,2.5)); text('github.com/kimminung/formula-simplification',960,900,{size:28,fam:F_MONO,color:GRAY,align:'center',alpha:a});
+}
+
+const SCENES=[
+  {s:0.0,  e:5.4,  fi:0,   fo:0.5, draw:sceneTitle},
+  {s:5.0,  e:15.4, fi:0.5, fo:0.45, draw:sceneDraw},
+  {s:15.0, e:28.6, fi:0.5, fo:0.45, draw:sceneConvert},
+  {s:28.2, e:32.6, fi:0.5, fo:0.45, draw:sceneGallery},
+  {s:32.2, e:36.0, fi:0.5, fo:0.7, draw:sceneOutro},
+];
+window.DURATION=36.0;
+window.renderFrame=function(t){
+  ctx.setTransform(1,0,0,1,0,0); ctx.globalAlpha=1; ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  for(const sc of SCENES){ if(t>=sc.s&&t<=sc.e){ const a=fade(t,sc.s,sc.e,sc.fi,sc.fo); if(a<=0) continue; ctx.save(); ctx.globalAlpha=a; sc.draw(t-sc.s); ctx.restore(); } }
+};
+</script></body></html>
