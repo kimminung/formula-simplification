@@ -1,5 +1,5 @@
 /// Expression tree produced by MathParser and consumed by MathEvaluator.
-indirect enum MathExpr {
+nonisolated indirect enum MathExpr {
     case number(Double)
     case variable(String)
     case negate(MathExpr)

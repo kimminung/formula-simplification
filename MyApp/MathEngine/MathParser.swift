@@ -2,7 +2,7 @@ import Foundation
 
 /// Recursive-descent parser. Precedence (low to high):
 /// `+ -` < `* /` < unary `-` < `^` (right-associative) < primary (literal, variable, call, parens).
-struct MathParser {
+nonisolated struct MathParser {
     private let tokens: [MathToken]
     private var position = 0
 

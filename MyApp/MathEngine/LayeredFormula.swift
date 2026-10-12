@@ -2,7 +2,7 @@ import CoreGraphics
 
 /// One "artwork": x(t,k) and y(t,k) over t, repeated for k = 0..<kCount and overlaid —
 /// the Naderi Yeganeh technique of building an image out of many overlapping curves.
-struct LayeredFormula: Equatable {
+nonisolated struct LayeredFormula: Equatable, Sendable {
     var xExpression: String
     var yExpression: String
     var tStart: Double = 0

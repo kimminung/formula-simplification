@@ -1,6 +1,6 @@
 import Foundation
 
-enum MathTokenKind: Equatable {
+nonisolated enum MathTokenKind: Equatable {
     case number(Double)
     case identifier(String)
     case plus, minus, star, slash, caret
@@ -20,7 +20,7 @@ struct MathSyntaxError: Error, CustomStringConvertible, Equatable {
     var description: String { "\(column)열: \(message)" }
 }
 
-struct MathLexer {
+nonisolated struct MathLexer {
     private let characters: [Character]
     private var index = 0
 

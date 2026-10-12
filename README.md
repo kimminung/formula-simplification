@@ -22,6 +22,7 @@ Mathigram은 이 아이디어를 iPhone에서 양방향으로 체험하는 앱�
 - [진행 상황](#진행-상황)
 - [Phase 0 — 프로젝트 기반](#phase-0--프로젝트-기반)
 - [Phase 1 — 수식 엔진](#phase-1--수식-엔진)
+- [Phase 2 — 그리기 모드](#phase-2--그리기-모드)
 - [요구 사항](#요구-사항)
 - [프로젝트 구조](#프로젝트-구조)
 - [라이선스](#라이선스)
@@ -41,7 +42,7 @@ Mathigram은 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다
 |---|---|:-:|
 | 0 | 프로젝트 기반 (문서·타깃 설정·탭 스켈레톤) | ✅ |
 | 1 | 수식 엔진 (렉서/파서/평가기) | ✅ |
-| 2 | 그리기 모드 (수식 → 그림) | ⬜️ |
+| 2 | 그리기 모드 (수식 → 그림) | ✅ |
 | 3 | 변환 모드 (그림 → 수식) | ⬜️ |
 | 4 | 갤러리 & 설정 | ⬜️ |
 | 5 | 검증 및 마무리 | ⬜️ |
@@ -80,6 +81,25 @@ Mathigram은 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다
 xcodebuild test -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
+## Phase 2 — 그리기 모드
+
+`그리기` 탭이 Phase 1의 MathEngine으로 실제로 동작한다. `x(t,k)`, `y(t,k)` 두 식을 입력하면 450ms 뒤 백그라운드에서 평가되어 Canvas에 그려지고, 10개 프리셋 중 하나를 고르면 즉시 그 수식과 그림으로 바뀐다.
+
+<div align="center">
+<img src="Media/Screenshots/phase2-draw-heart.png" width="23%" alt="그리기 — 하트 곡선 기본 프리셋" />
+<img src="Media/Screenshots/phase2-draw-presets.png" width="23%" alt="그리기 — 프리셋 메뉴 10종" />
+<img src="Media/Screenshots/phase2-draw-spirograph.png" width="23%" alt="그리기 — 스피로그래프 다발 24겹" />
+<img src="Media/Screenshots/phase2-draw-cardioid.png" width="23%" alt="그리기 — 카디오이드 실 그림, 직선 200개" />
+<br/>
+<sub>iPhone 16 시뮬레이터(iOS 27) · 하트 곡선 / 프리셋 메뉴 / 스피로그래프 다발(24겹) / 카디오이드 실 그림(직선 200개)</sub>
+</div>
+
+- **수식 입력 → 즉시 그림**: 단일 곡선(하트·장미·리사주·나비·아스트로이드)은 `k`가 1인 LayeredFormula로, 레이어드 작품(스피로그래프 다발·나선 다발·원형 체인·카디오이드 실 그림·파동 격자)은 `x(t,k)`, `y(t,k)`가 `k`에 따라 달라지는 수백 겹의 곡선/직선으로 그려진다.
+- **카디오이드 실 그림**은 원 위의 점 `k`와 `2k`를 잇는 직선 200개만으로 카디오이드 곡선을 만드는 전통 실 그림(string art) 기법을 그대로 구현한 것이다 — 직선만 모여도 곡선이 "보이는" 좋은 예시다.
+- **레이어 수 조절**: Stepper로 `k`를 1~4,000까지 바꾸면 그림이 바로 다시 그려진다 (MathEngine이 레이어 4,000개·레이어당 샘플 400개로 자동 클램프하므로 큰 값을 넣어도 멈추지 않는다).
+- **수식 표기 패널**과 **오류 배너**: 수식을 잘못 입력하면(괄호 불일치, 정의되지 않은 변수 등) 캔버스는 마지막 성공 결과를 유지한 채 빨간 배너로 오류를 보여준다.
+- **저장**: 우측 상단 저장 버튼이 현재 캔버스를 PNG로 사진 앱에 저장한다.
+
 ## 요구 사항
 
 - Xcode (iOS 27 SDK 포함)
@@ -99,7 +119,7 @@ MyApp/
 ├─ Model/                              # AppModel, RenderSettings
 ├─ MathEngine/                         # 수식 렉서/파서/평가기, LayeredFormula, FormulaFormatter
 ├─ Fourier/                            # (Phase 3) 윤곽 추출 + DFT 피팅
-├─ Rendering/                          # (Phase 2) MathCanvasRenderer
+├─ Rendering/                          # MathCanvasRenderer (수식 → 화면 좌표 Path)
 ├─ Persistence/                        # (Phase 4) SwiftData SavedArtwork
 └─ Views/                              # DrawView, ConvertView, GalleryView, SettingsView
 Docs/                                  # PRD, TASKS

@@ -7,8 +7,8 @@ struct MathEvaluationError: Error, CustomStringConvertible, Equatable {
 
 /// Evaluates a MathExpr tree against a variable binding (typically t, k, n).
 /// This never executes arbitrary code — only the fixed operator/function set below.
-enum MathEvaluator {
-    static func evaluate(_ expr: MathExpr, variables: [String: Double]) throws -> Double {
+nonisolated enum MathEvaluator {
+    nonisolated static func evaluate(_ expr: MathExpr, variables: [String: Double]) throws -> Double {
         switch expr {
         case .number(let value):
             return value
@@ -41,7 +41,7 @@ enum MathEvaluator {
         }
     }
 
-    private static func evaluateFunction(_ name: String, _ args: [Double]) throws -> Double {
+    nonisolated private static func evaluateFunction(_ name: String, _ args: [Double]) throws -> Double {
         func arity1() throws -> Double {
             guard args.count == 1 else {
                 throw MathEvaluationError(message: "'\(name)'은(는) 인자를 1개 받습니다")

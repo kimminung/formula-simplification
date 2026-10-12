@@ -21,11 +21,11 @@
 - [x] T1.7 Swift Testing 유닛 테스트 (Lexer/Parser/Evaluator/LayeredFormula/FormulaFormatter) — MathigramTests 타깃 신설, 15개 테스트 통과
 
 ## Phase 2 — 그리기 모드 (수식 → 그림)
-- [ ] T2.1 MathCanvasRenderer (LayeredFormula → [Path], 백그라운드 평가)
-- [ ] T2.2 FormulaPresets 10종 이상 (하트/장미/리사주/나비/스피로그래프/나선 다발 등) + 요약 텍스트
-- [ ] T2.3 DrawView: 수식 편집기 + 프리셋 메뉴 + 실시간 Canvas 미리보기 (디바운스 450ms)
-- [ ] T2.4 수식 표기 패널 (FormulaFormatter 사용), 평가 오류 배너
-- [ ] T2.5 결과 PNG 내보내기 (사진 앱 저장)
+- [x] T2.1 MathCanvasRenderer (LayeredFormula → [Path], 백그라운드 평가, 자동 맞춤·y축 반전)
+- [x] T2.2 FormulaPresets 10종 (하트·장미·리사주·나비·아스트로이드 + 스피로그래프 다발·나선 다발·원형 체인·카디오이드 실 그림·파동 격자) + 요약 텍스트
+- [x] T2.3 DrawView: 수식 편집기 + 프리셋 메뉴 + 실시간 Canvas 미리보기 (Task 취소 기반 디바운스 450ms)
+- [x] T2.4 수식 표기 패널 (FormulaFormatter 사용), 평가 오류 배너
+- [x] T2.5 결과 PNG 내보내기 (ImageRenderer → 사진 앱 저장)
 
 ## Phase 3 — 변환 모드 (그림 → 수식)
 - [ ] T3.1 PhotosPicker 연동, 선택 이미지 전처리(리사이즈/그레이스케일)
