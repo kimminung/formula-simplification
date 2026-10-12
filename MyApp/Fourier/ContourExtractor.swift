@@ -28,7 +28,13 @@ nonisolated enum ContourExtractor {
 
         let observation = try await request.perform(on: cgImage)
 
-        guard let bestContour = observation.topLevelContours.max(by: { $0.pointCount < $1.pointCount }),
+        // Busy real-world photos produce many small, jagged texture contours with lots of
+        // points; picking by point count favors that noise. The bounding-box area instead
+        // favors the single largest shape in the frame — except the frame itself, which also
+        // has a trivially large bounding box, so it's excluded first.
+        let candidates = observation.topLevelContours.filter { areaOf($0) < 0.85 }
+        let pool = candidates.isEmpty ? observation.topLevelContours : candidates
+        guard let bestContour = pool.max(by: { areaOf($0) < areaOf($1) }),
               bestContour.pointCount > 4 else {
             throw ContourExtractionError.noContourFound
         }
@@ -40,5 +46,10 @@ nonisolated enum ContourExtractor {
         }
 
         return PolylineResampler.resample(rawPoints, to: sampleCount)
+    }
+
+    private static func areaOf(_ contour: ContoursObservation.Contour) -> Double {
+        let box = contour.boundingBox
+        return Double(box.width) * Double(box.height)
     }
 }
