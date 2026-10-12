@@ -16,6 +16,10 @@
 
 <img src="Media/Video/intro.gif" width="100%" alt="수식단순화 소개 영상 — 그리기(수식 → 그림) · 변환(사진 → 수식) · 갤러리 · 설정" />
 
+
+https://github.com/user-attachments/assets/0e3ca410-8e6a-48ec-8289-38fc5cd15407
+
+
 <sub>▶︎ 36초 소개 영상 (자동 재생) — 그리기(스피로그래프 24겹 · 카디오이드 실 그림 · 수식 혼합) → 변환(푸리에 에피사이클 · 항 개수 조절 · iPhone 16 실기기 사진) → 갤러리 & 설정. <a href="Media/Video/intro.mp4">고화질 MP4로 보기</a></sub>
 
 <br/><br/>
