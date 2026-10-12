@@ -1,5 +1,7 @@
 import SwiftUI
+import SwiftData
 import PhotosUI
+import UIKit
 
 private enum ConvertInputMode: String, CaseIterable, Hashable {
     case photo = "사진"
@@ -10,11 +12,13 @@ private enum ConvertInputMode: String, CaseIterable, Hashable {
 /// both a photo and a finger-drawn sketch feed the same Fourier-series pipeline.
 struct ConvertView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.modelContext) private var modelContext
     @State private var model = ConvertModel()
     @State private var inputMode: ConvertInputMode = .photo
     @State private var photoItem: PhotosPickerItem?
     @State private var sketchPoints: [CGPoint] = []
     @State private var canvasRect: CGRect = .zero
+    @State private var savedMessage: String?
 
     private var hasResult: Bool { model.series != nil || model.isProcessing || model.errorMessage != nil }
 
@@ -37,11 +41,26 @@ struct ConvertView: View {
             }
             .navigationTitle("변환")
             .toolbar {
+                if model.series != nil {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { saveToGallery() } label: {
+                            Label("갤러리에 저장", systemImage: "tray.and.arrow.down")
+                        }
+                    }
+                }
                 if hasResult {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("다시 하기") { startOver() }
                     }
                 }
+            }
+            .alert(
+                "저장됨",
+                isPresented: Binding(get: { savedMessage != nil }, set: { if !$0 { savedMessage = nil } })
+            ) {
+                Button("확인", role: .cancel) {}
+            } message: {
+                Text(savedMessage ?? "")
             }
         }
         .onChange(of: photoItem) { _, newItem in
@@ -54,6 +73,32 @@ struct ConvertView: View {
             }
         }
         .onChange(of: inputMode) { _, _ in sketchPoints = [] }
+        .onChange(of: appModel.pendingConvertLoad) { _, newValue in
+            guard let newValue else { return }
+            model.loadStored(series: newValue.series, termCount: newValue.termCount)
+            appModel.pendingConvertLoad = nil
+        }
+    }
+
+    @MainActor
+    private func saveToGallery() {
+        guard let series = model.series else { return }
+        let exportView = ZStack {
+            appModel.renderSettings.backgroundColor
+            reconstructionCanvas
+        }
+        .frame(width: canvasRect.width, height: canvasRect.height)
+
+        let renderer = ImageRenderer(content: exportView)
+        renderer.scale = 3
+        guard let image = renderer.uiImage, let thumbnailData = image.pngData() else {
+            savedMessage = "이미지를 만들지 못했습니다."
+            return
+        }
+        let artwork = SavedArtwork(kind: .convert, title: "변환 작품", thumbnailData: thumbnailData)
+        artwork.apply(series: series, termCount: model.termCount)
+        modelContext.insert(artwork)
+        savedMessage = "갤러리에 저장했습니다."
     }
 
     private func startOver() {
@@ -194,7 +239,7 @@ struct ConvertView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             Text(FourierFormatter.notation(for: series, termCount: model.termCount))
-                .font(.system(size: 13, design: .serif))
+                .font(.system(.footnote, design: .serif))
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
         }

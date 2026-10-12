@@ -34,6 +34,13 @@ final class ConvertModel {
         Task { await process { PolylineResampler.resample(points, to: 160) } }
     }
 
+    /// Reopens a previously saved result (from the Gallery) without rerunning Vision/DFT.
+    func loadStored(series: FourierSeries, termCount: Int) {
+        reset()
+        self.series = series
+        self.termCount = termCount
+    }
+
     func updateCanvasRect(_ rect: CGRect) {
         canvasRect = rect
         rebuildPath()

@@ -1,9 +1,11 @@
 import SwiftUI
+import SwiftData
 import UIKit
 
 /// Formula → image. Edits a LayeredFormula and renders it live via MathCanvasRenderer.
 struct DrawView: View {
     @Environment(AppModel.self) private var appModel
+    @Environment(\.modelContext) private var modelContext
     @State private var model = DrawModel(formula: FormulaPresets.all[0].formula)
     @State private var canvasRect: CGRect = .zero
     @State private var savedMessage: String?
@@ -29,7 +31,13 @@ struct DrawView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { saveSnapshot() } label: {
-                        Label("저장", systemImage: "square.and.arrow.down")
+                        Label("사진 앱에 저장", systemImage: "square.and.arrow.down")
+                    }
+                    .disabled(model.layerPaths.isEmpty)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { saveToGallery() } label: {
+                        Label("갤러리에 저장", systemImage: "tray.and.arrow.down")
                     }
                     .disabled(model.layerPaths.isEmpty)
                 }
@@ -50,6 +58,11 @@ struct DrawView: View {
         }
         .onChange(of: model.formula) { _, _ in
             model.scheduleRender(in: canvasRect)
+        }
+        .onChange(of: appModel.pendingDrawFormula) { _, newValue in
+            guard let newValue else { return }
+            model.formula = newValue
+            appModel.pendingDrawFormula = nil
         }
     }
 
@@ -153,7 +166,7 @@ struct DrawView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             Text(FormulaFormatter.notation(for: model.formula))
-                .font(.system(size: 13, design: .serif))
+                .font(.system(.footnote, design: .serif))
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -162,7 +175,7 @@ struct DrawView: View {
     // MARK: - Export
 
     @MainActor
-    private func saveSnapshot() {
+    private func renderedImage() -> UIImage? {
         let exportView = ZStack {
             appModel.renderSettings.backgroundColor
             canvasContent
@@ -171,12 +184,30 @@ struct DrawView: View {
 
         let renderer = ImageRenderer(content: exportView)
         renderer.scale = 3
-        guard let image = renderer.uiImage else {
+        return renderer.uiImage
+    }
+
+    @MainActor
+    private func saveSnapshot() {
+        guard let image = renderedImage() else {
             savedMessage = "이미지를 만들지 못했습니다."
             return
         }
         UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
         savedMessage = "사진 앱에 저장했습니다."
+    }
+
+    @MainActor
+    private func saveToGallery() {
+        guard let image = renderedImage(), let thumbnailData = image.pngData() else {
+            savedMessage = "이미지를 만들지 못했습니다."
+            return
+        }
+        let title = model.formula.title.isEmpty ? "그리기 작품" : model.formula.title
+        let artwork = SavedArtwork(kind: .draw, title: title, thumbnailData: thumbnailData)
+        artwork.apply(formula: model.formula)
+        modelContext.insert(artwork)
+        savedMessage = "갤러리에 저장했습니다."
     }
 }
 

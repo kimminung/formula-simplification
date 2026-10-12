@@ -1,18 +1,25 @@
 import Foundation
 import CoreGraphics
 
-struct FourierTerm: Identifiable, Sendable {
-    let id = UUID()
+struct FourierTerm: Identifiable, Sendable, Codable, Equatable {
+    let id: UUID
     /// Signed frequency — how many times this epicycle turns per period.
     let k: Int
     let amplitude: Double
     let phase: Double
+
+    init(k: Int, amplitude: Double, phase: Double) {
+        self.id = UUID()
+        self.k = k
+        self.amplitude = amplitude
+        self.phase = phase
+    }
 }
 
 /// A truncated discrete Fourier series fit to a closed contour — the classic "draw any shape
 /// with epicycles" technique. `terms` is sorted by amplitude descending; `points(usingTermCount:)`
 /// sums however many of the strongest terms the caller wants into one closed polyline.
-nonisolated struct FourierSeries: Sendable {
+nonisolated struct FourierSeries: Sendable, Codable, Equatable {
     let terms: [FourierTerm]
     let sampleCount: Int
 

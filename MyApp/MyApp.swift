@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct MyApp: App {
@@ -9,5 +10,6 @@ struct MyApp: App {
             ContentView()
                 .environment(appModel)
         }
+        .modelContainer(for: SavedArtwork.self)
     }
 }

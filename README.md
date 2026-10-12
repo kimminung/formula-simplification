@@ -24,6 +24,7 @@ Mathigram은 이 아이디어를 iPhone에서 양방향으로 체험하는 앱�
 - [Phase 1 — 수식 엔진](#phase-1--수식-엔진)
 - [Phase 2 — 그리기 모드](#phase-2--그리기-모드)
 - [Phase 3 — 변환 모드](#phase-3--변환-모드)
+- [Phase 4 — 갤러리 & 설정](#phase-4--갤러리--설정)
 - [요구 사항](#요구-사항)
 - [프로젝트 구조](#프로젝트-구조)
 - [라이선스](#라이선스)
@@ -45,7 +46,7 @@ Mathigram은 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다
 | 1 | 수식 엔진 (렉서/파서/평가기) | ✅ |
 | 2 | 그리기 모드 (수식 → 그림) | ✅ |
 | 3 | 변환 모드 (그림 → 수식) | ✅ |
-| 4 | 갤러리 & 설정 | ⬜️ |
+| 4 | 갤러리 & 설정 | ✅ |
 | 5 | 검증 및 마무리 | ⬜️ |
 
 ## Phase 0 — 프로젝트 기반
@@ -120,6 +121,23 @@ xcodebuild test -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 1
 - 레이어드 수식(Phase 2의 `LayeredFormula`)과 달리, 푸리에 재구성은 여러 곡선을 겹쳐 그리는 게 아니라 **여러 항을 하나의 곡선으로 합산**하는 것이라 전용 `FourierSeries` 타입으로 구현했다 — `MathCanvasRenderer`의 화면 맞춤(fit) 로직만 공유한다.
 - `FourierFit`/`PolylineResampler`에 대한 단위 테스트 4개를 추가했다(단위원을 근사하면 지배항이 `k=±1, r≈1`이 되는지, 항을 늘리면 재구성 오차가 실제로 줄어드는지 검증) — 전체 19개 테스트 통과.
 
+## Phase 4 — 갤러리 & 설정
+
+그리기·변환 결과를 SwiftData로 저장하고 다시 불러올 수 있다.
+
+<div align="center">
+<img src="Media/Screenshots/phase4-gallery-grid.png" width="30%" alt="갤러리 — 저장된 작품 그리드" />
+<img src="Media/Screenshots/phase4-gallery-detail.png" width="30%" alt="갤러리 — 작품 상세 시트, 다시 열기/삭제" />
+<img src="Media/Screenshots/phase4-gallery-mixed.png" width="30%" alt="갤러리 — 그리기(연필)·변환(마법봉) 작품이 섞여 있는 그리드" />
+<br/>
+<sub>iPhone 16 시뮬레이터(iOS 27) · 갤러리 그리드 / 작품 상세 / 그리기·변환 혼합 그리드</sub>
+</div>
+
+- **저장**: `그리기`/`변환` 탭 툴바의 "갤러리에 저장" 버튼이 현재 캔버스를 썸네일로 렌더링하고, 그리기는 수식 필드(x/y 식·t 범위·레이어 수)를, 변환은 푸리에 계수 전체(JSON)와 사용 중이던 항 개수를 `SavedArtwork`에 함께 저장한다 — 다시 열었을 때 Vision/DFT를 재실행하지 않고 그대로 복원된다.
+- **그리드 → 상세 → 다시 열기**: 썸네일을 탭하면 큰 미리보기와 "그리기에서 다시 열기"/"변환에서 다시 열기" 버튼이 있는 시트가 뜬다. 버튼을 누르면 해당 탭으로 전환되고 저장된 수식이 그대로 로드된다 — 탭 사이의 전달은 `AppModel.pendingDrawFormula` / `pendingConvertLoad`가 맡는다.
+- **삭제**: 상세 시트의 휴지통 버튼으로 삭제한다.
+- **설정**: 선 색상·굵기·색상 순환(레이어 진행에 따라 Hue 회전)·배경 토글은 Phase 0부터 이미 실제로 동작했고, 이번에 접근성 점검(Dynamic Type 대응 폰트, 갤러리 썸네일 accessibilityLabel)을 더했다.
+
 ## 요구 사항
 
 - Xcode (iOS 27 SDK 포함)
@@ -140,8 +158,8 @@ MyApp/
 ├─ MathEngine/                         # 수식 렉서/파서/평가기, LayeredFormula, FormulaFormatter
 ├─ Fourier/                            # ContourExtractor·PolylineResampler·FourierFit·FourierSeries·FourierFormatter
 ├─ Rendering/                          # MathCanvasRenderer (수식 → 화면 좌표 Path)
-├─ Persistence/                        # (Phase 4) SwiftData SavedArtwork
-└─ Views/                              # DrawView, ConvertView, GalleryView, SettingsView
+├─ Persistence/                        # SwiftData SavedArtwork
+└─ Views/                              # DrawView, ConvertView, GalleryView, ArtworkDetailView, SettingsView
 Docs/                                  # PRD, TASKS
 Media/Screenshots/                     # README 이미지
 ```

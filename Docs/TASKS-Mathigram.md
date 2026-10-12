@@ -36,10 +36,10 @@
 - [x] T3.6 (추가) Swift Testing: PolylineResampler·FourierFit 단위 테스트 4개 (원 재구성 시 지배항 k=±1 검증, 항 개수 증가 시 오차 감소 검증)
 
 ## Phase 4 — 갤러리 & 설정
-- [ ] T4.1 SwiftData 모델 SavedArtwork (종류/수식 데이터/썸네일/생성일)
-- [ ] T4.2 GalleryView 그리드, 탭하여 열기, 스와이프 삭제
-- [ ] T4.3 SettingsView (선 색상/색상 순환/굵기/배경/앱 정보·라이선스)
-- [ ] T4.4 접근성 점검 (Dynamic Type, accessibilityLabel)
+- [x] T4.1 SwiftData 모델 SavedArtwork (종류/수식 데이터·푸리에 계수 JSON/썸네일/생성일), MyApp.swift에 modelContainer 연결
+- [x] T4.2 GalleryView 그리드 + ArtworkDetailView(탭하여 열기, 삭제) — 설계 변경: "스와이프 삭제" 대신 상세 시트의 휴지통 버튼으로 구현(그리드 셀이 버튼이라 리스트 스와이프 제스처 대상이 아니라서); 저장된 수식을 원래 탭(그리기/변환)으로 복원하는 "다시 열기" 추가(AppModel.pendingDrawFormula/pendingConvertLoad로 탭 간 전달)
+- [x] T4.3 SettingsView (선 색상/색상 순환/굵기/배경/앱 정보·라이선스) — Phase 0에서 이미 구현, 변경 없음
+- [x] T4.4 접근성 점검 — 갤러리 썸네일에 accessibilityLabel 추가, 수식 표기 패널 폰트를 고정 크기(13pt)에서 Dynamic Type 대응 텍스트 스타일(.footnote)로 변경. 툴바 버튼은 전부 아이콘+텍스트 Label이라 기본적으로 VoiceOver 호환
 
 ## Phase 5 — 검증 및 마무리
 - [ ] T5.1 iPhone 16 시뮬레이터(iOS 27) 전체 탭 전수 테스트
