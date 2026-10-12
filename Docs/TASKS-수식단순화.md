@@ -68,7 +68,8 @@
 - [x] T7.3 폴백을 삼키지 않음 — `Extraction(shapes, subjectIsolated, isolationNote)`로 "피사체를 찾지 못함" / "분리를 사용할 수 없음(사유)"을 캡션에 표시
 - [x] T7.4 ConvertModel.isolateSubject(기본 ON, 변경 시 재분석) + ConvertView "피사체만 분석" 토글; 캡션을 캔버스 밖으로 옮겨 그림을 가리지 않게 함
 - [x] T7.5 Mac 프로브로 API 사용법 검증: 바다풀·레몬나무·꽃밭·별 → 피사체 1개, 폭포/이끼 → 피사체 없음(nil)
-- [~] T7.6 시뮬레이터 검증 — iPhone 16 시뮬레이터는 분할 모델을 실행하지 못함("Could not create inference context"); 폴백 경로와 안내문이 정상 표시됨을 확인. **실기기 검증 보류**: 검증 시점에 iPhone이 연결 해제 상태. 기기를 연결·잠금 해제한 뒤 변환 탭에서 피사체가 뚜렷한 사진으로 ON/OFF를 비교하면 됨
+- [x] T7.6 시뮬레이터 검증 — iPhone 16 시뮬레이터는 분할 모델을 실행하지 못함("Could not create inference context"); 폴백 경로와 안내문이 정상 표시됨을 확인
+- [x] T7.7 실기기 검증 (iPhone 16, 2026-10-13) — 촬영 사진 5장에서 "· 피사체 분리" 캡션과 함께 실루엣이 1번 도형으로 잡힘: 인물 11개(40항), 강아지 35개(40항), 정장 인물 27개(192항), 얼음 컵 40개(111항), 방사형 무늬 피사체 30개(192항). 토글을 끄면 같은 기기에서 도형 80개 상한까지 차고 배경 질감이 산포로 섞여 ON/OFF 차이가 뚜렷함. 스크린샷 `Media/Screenshots/phase7-device-*.png`
 
 ## 개명: Mathigram → 수식단순화
 - [x] 번들 표시 이름(CFBundleDisplayName)을 "수식단순화"로 변경

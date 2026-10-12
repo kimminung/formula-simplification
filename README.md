@@ -18,6 +18,17 @@
 
 <sub>▶︎ 위 썸네일을 누르면 24초 소개 영상이 재생됩니다 — 아이콘 → 그리기(프리셋·수식 혼합) → 변환(스케치·사진) → 갤러리 → 설정 순으로 핵심 기능을 보여준다.</sub>
 
+<br/><br/>
+
+**iPhone 16 실기기에서 촬영 사진을 수식으로 바꾼 결과**
+
+<img src="Media/Screenshots/phase7-device-suit.png" width="23%" alt="실기기 — 정장 입은 인물 사진, 도형 27개" />
+<img src="Media/Screenshots/phase7-device-dog.png" width="23%" alt="실기기 — 강아지 사진, 도형 35개" />
+<img src="Media/Screenshots/phase7-device-cup.png" width="23%" alt="실기기 — 얼음 담긴 컵 사진, 도형 40개" />
+<img src="Media/Screenshots/phase7-device-flower.png" width="23%" alt="실기기 — 방사형 무늬 피사체, 도형 30개·도형당 192항" />
+
+<sub>사진 한 장이 도형 27~40개, 삼각함수 급수 2,500~3,400항으로 분해된다. 모두 피사체 분리가 적용된 결과.</sub>
+
 </div>
 
 ---
@@ -58,7 +69,7 @@
 | 4 | 갤러리 & 설정 | ✅ |
 | 5 | 검증 및 마무리 | ✅ |
 | 6 | 변환 고도화 (다중 윤곽·다중 획) | ✅ |
-| 7 | 피사체 분할 (사진 변환 앞단) | 🔶 실기기 검증 대기 |
+| 7 | 피사체 분할 (사진 변환 앞단) | ✅ 실기기 검증 완료 |
 
 ## Phase 0 — 프로젝트 기반
 
@@ -219,23 +230,39 @@ xcodebuild test -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 1
 
 변환 탭 사진 모드의 **"피사체만 분석"** 토글(기본 켜짐)로 끄고 켤 수 있고, 바꾸면 자동으로 다시 분석한다. 캡션에는 분리가 적용되면 "· 피사체 분리"가 붙는다.
 
-**검증 상태 (솔직하게)**: Mac에서 같은 Vision API를 직접 돌려 사용법이 맞음을 확인했다(바다풀·레몬나무·꽃밭·별 사진 → 피사체 1개, 폭포·이끼 → 없음). 그러나 **iPhone 16 시뮬레이터는 분할 모델을 실행하지 못한다**("Could not create inference context") — 시뮬레이터에서는 폴백 경로와 안내문이 정상 동작함만 확인했다. 실제 분리 품질은 **실기기에서 확인해야 하며**, 작성 시점에 iPhone이 연결 해제 상태라 보류 중이다.
+### 실기기 검증 (iPhone 16)
+
+분할 모델은 **iPhone 16 시뮬레이터에서는 실행되지 않는다**("Could not create inference context"). 시뮬레이터에서는 폴백 경로와 안내문만 확인하고, 실제 분리 품질은 iPhone 16 실기기에서 직접 촬영한 사진으로 검증했다.
+
+<div align="center">
+<img src="Media/Screenshots/phase7-device-portrait.png" width="19%" alt="실기기 — 인물 사진, 도형 11개·도형당 40항·피사체 분리" />
+<img src="Media/Screenshots/phase7-device-dog.png" width="19%" alt="실기기 — 강아지 사진, 도형 35개·피사체 분리" />
+<img src="Media/Screenshots/phase7-device-suit.png" width="19%" alt="실기기 — 정장 인물 사진, 도형 27개·도형당 192항·피사체 분리" />
+<img src="Media/Screenshots/phase7-device-cup.png" width="19%" alt="실기기 — 얼음 컵 사진, 도형 40개·도형당 111항·피사체 분리" />
+<img src="Media/Screenshots/phase7-device-isolation-off.png" width="19%" alt="실기기 — 피사체만 분석 끔, 도형 80개, 배경 질감까지 포함" />
+<br/>
+<sub>인물(도형 11개) / 강아지(35개) / 정장 인물(27개, 192항) / 얼음 컵(40개, 111항) / <b>피사체 분리 끔</b>(80개 — 배경 질감이 산포로 섞임)</sub>
+</div>
+
+- **실루엣이 먼저 잡힌다**: 인물·강아지·컵 모두 바깥 윤곽이 도형 1번으로 들어오고, 그 안에 눈·귀·옷깃·얼음 같은 내부 윤곽이 쌓인다. 캡션에 "· 피사체 분리"가 붙어 분할이 실제로 적용됐음을 알 수 있다.
+- **끄면 차이가 바로 보인다**: 마지막 스크린샷은 같은 기기에서 "피사체만 분석"을 끈 결과다. 도형 수가 80개 상한까지 차고, 배경 질감이 작은 윤곽들의 산포로 들어온다 — Phase 6에서 지적한 바로 그 한계이며, 분리를 켜면 사라진다.
+- **항 수가 그림을 좌우한다**: 정장 인물과 얼음 컵은 도형당 항 수를 최대(192항·111항)로 올린 결과라 선이 사진 윤곽에 거의 붙고, 인물·강아지는 기본 40항이라 선이 부드럽게 단순화된다. 총 항 수는 사진 한 장당 440~3,400개.
 
 ## 요구 사항
 
 - Xcode (iOS 27 SDK 포함)
-- iPhone 16 시뮬레이터 (또는 iOS 27을 지원하는 실제 iPhone)
+- iPhone 16 시뮬레이터 (또는 iOS 27을 지원하는 실제 iPhone — 변환 탭의 **피사체 분리**는 실기기에서만 동작한다)
 
 ```bash
-open "Untitled Project.xcodeproj"
+open "Formula Simplification.xcodeproj"
 ```
 
-실행 대상을 **iPhone 16** 시뮬레이터로 선택하고 `Cmd + R`로 빌드·실행한다.
+실행 대상을 **iPhone 16** 시뮬레이터 또는 연결된 iPhone으로 선택하고 `Cmd + R`로 빌드·실행한다.
 
 ## 프로젝트 구조
 
 ```
-MyApp/
+Formula Simplification/
 ├─ MyApp.swift, ContentView.swift      # 4탭 루트
 ├─ Model/                              # AppModel, RenderSettings, DrawModel, ConvertModel
 ├─ MathEngine/                         # 수식 렉서/파서/평가기, LayeredFormula, FormulaFormatter, FormulaPresets
@@ -243,8 +270,9 @@ MyApp/
 ├─ Rendering/                          # MathCanvasRenderer (수식 → 화면 좌표 Path)
 ├─ Persistence/                        # SwiftData SavedArtwork
 └─ Views/                              # DrawView, ConvertView, GalleryView, ArtworkDetailView, SettingsView
+MathigramTests/                        # Swift Testing 단위 테스트 (26개)
 Docs/                                  # PRD, TASKS
-Media/Screenshots/                     # README 이미지
+Media/Screenshots/, Media/Video/       # README 이미지·소개 영상
 ```
 
 ## 라이선스
