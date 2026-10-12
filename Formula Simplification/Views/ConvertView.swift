@@ -39,6 +39,21 @@ struct ConvertView: View {
                     .padding(.vertical, 8)
                 }
                 canvasSection
+                if let shapes = model.shapes {
+                    // Kept outside the canvas so captions never cover the drawing.
+                    VStack(alignment: .leading, spacing: 4) {
+                        caption(
+                            "도형 \(shapes.count)개 · 도형당 \(model.termCount)항"
+                            + (model.subjectIsolated == true ? " · 피사체 분리" : "")
+                        )
+                        if let note = model.isolationNote {
+                            caption(note)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                }
                 Divider()
                 controlSection
             }
@@ -124,17 +139,6 @@ struct ConvertView: View {
 
                 if model.shapes != nil || model.isProcessing {
                     reconstructionCanvas
-                    if let shapes = model.shapes {
-                        VStack {
-                            Spacer()
-                            HStack {
-                                caption("도형 \(shapes.count)개 · 도형당 \(model.termCount)항")
-                                Spacer()
-                            }
-                        }
-                        .padding(12)
-                        .allowsHitTesting(false)
-                    }
                 } else if let errorMessage = model.errorMessage {
                     ContentUnavailableView {
                         Label("분석 실패", systemImage: "exclamationmark.triangle")
@@ -301,6 +305,12 @@ struct ConvertView: View {
             }
             .pickerStyle(.segmented)
             Text("세밀도가 높을수록 더 많은 밝기 단계에서 더 작은 윤곽까지 찾습니다 (최대 \(model.photoDetail.maxShapes)개).")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+
+            Toggle("피사체만 분석", isOn: $bindableModel.isolateSubject)
+                .font(.footnote)
+            Text("켜면 주된 피사체를 먼저 분리해 그 실루엣과 내부 윤곽만 수식으로 만들고, 배경은 무시합니다. 피사체를 못 찾으면 사진 전체를 분석합니다.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }

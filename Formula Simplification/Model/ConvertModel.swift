@@ -15,10 +15,21 @@ final class ConvertModel {
             loadPhoto(lastImage)
         }
     }
+    /// Segment the main subject first and ignore the background. Re-analyzes when toggled.
+    var isolateSubject = true {
+        didSet {
+            guard isolateSubject != oldValue, let lastImage else { return }
+            loadPhoto(lastImage)
+        }
+    }
     private(set) var isProcessing = false
     private(set) var errorMessage: String?
     private(set) var reconstructionPaths: [Path] = []
     private(set) var lastImage: UIImage?
+    /// Photo results only: whether the scan was limited to a segmented subject.
+    private(set) var subjectIsolated: Bool?
+    /// Shown when isolation was requested but didn't happen, so a silent fallback is never silent.
+    private(set) var isolationNote: String?
 
     private var canvasRect: CGRect = .zero
 
@@ -32,13 +43,20 @@ final class ConvertModel {
         errorMessage = nil
         reconstructionPaths = []
         lastImage = nil
+        subjectIsolated = nil
+        isolationNote = nil
     }
 
     func loadPhoto(_ image: UIImage) {
         let detail = photoDetail
+        let isolate = isolateSubject
         reset()
         lastImage = image
-        Task { await process { try await ContourExtractor.extractContours(from: image, detail: detail) } }
+        Task {
+            await process {
+                try await ContourExtractor.extractContours(from: image, detail: detail, isolateSubject: isolate)
+            }
+        }
     }
 
     /// Each finger-down → finger-up stroke becomes its own shape. Open strokes are walked
@@ -52,10 +70,11 @@ final class ConvertModel {
         }
         Task {
             await process {
-                usable.map { stroke in
+                let shapes = usable.map { stroke in
                     let loop = FourierFit.closedLoop(from: stroke)
                     return PolylineResampler.resample(loop, to: ContourExtractor.sampleCount(for: loop) * 2)
                 }
+                return ContourExtractor.Extraction(shapes: shapes, subjectIsolated: false, isolationNote: nil)
             }
         }
     }
@@ -73,15 +92,17 @@ final class ConvertModel {
     }
 
     @MainActor
-    private func process(_ makeShapes: @escaping () async throws -> [[CGPoint]]) async {
+    private func process(_ makeShapes: @escaping () async throws -> ContourExtractor.Extraction) async {
         isProcessing = true
         defer { isProcessing = false }
         do {
-            let contours = try await makeShapes()
+            let extraction = try await makeShapes()
             let fitted = await Task.detached(priority: .userInitiated) {
-                FourierFit.fit(shapes: contours)
+                FourierFit.fit(shapes: extraction.shapes)
             }.value
             shapes = fitted
+            subjectIsolated = lastImage == nil ? nil : extraction.subjectIsolated
+            isolationNote = extraction.isolationNote
             termCount = min(40, max(maxTermCount, 1))
         } catch {
             errorMessage = String(describing: error)

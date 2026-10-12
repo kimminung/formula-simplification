@@ -62,6 +62,14 @@
 - [x] T6.7 (후유증 정리) 테스트 파일 `@testable import MyApp` → `Formula_Simplification`
 - 한계: Vision 윤곽 검출은 의미 분할이 아니라 밝기 경계 추적이므로, 질감이 많은 사진은 "꽃"으로 읽히기보다 작은 윤곽들의 산포로 나온다. 피사체 대비가 뚜렷한 사진·직접 그린 선화에서 가장 좋다.
 
+## Phase 7 — 피사체 분할 (사진 변환 앞단)
+- [x] T7.1 ContourExtractor.isolate — `GenerateForegroundInstanceMaskRequest` → `generateScaledMask(for:scaledToImageFrom:)`로 전경 마스크 획득, Core Image `blendWithMask`로 배경을 흰색으로 칠한 "피사체만" 이미지 생성
+- [x] T7.2 마스크 자체의 윤곽을 실루엣(1순위 도형, 프레임 상한 97%)으로, 피사체만 이미지에서 다단계 밝기 스캔으로 내부 윤곽 추출 → 실루엣 우선 병합·중복 제거
+- [x] T7.3 폴백을 삼키지 않음 — `Extraction(shapes, subjectIsolated, isolationNote)`로 "피사체를 찾지 못함" / "분리를 사용할 수 없음(사유)"을 캡션에 표시
+- [x] T7.4 ConvertModel.isolateSubject(기본 ON, 변경 시 재분석) + ConvertView "피사체만 분석" 토글; 캡션을 캔버스 밖으로 옮겨 그림을 가리지 않게 함
+- [x] T7.5 Mac 프로브로 API 사용법 검증: 바다풀·레몬나무·꽃밭·별 → 피사체 1개, 폭포/이끼 → 피사체 없음(nil)
+- [~] T7.6 시뮬레이터 검증 — iPhone 16 시뮬레이터는 분할 모델을 실행하지 못함("Could not create inference context"); 폴백 경로와 안내문이 정상 표시됨을 확인. **실기기 검증 보류**: 검증 시점에 iPhone이 연결 해제 상태. 기기를 연결·잠금 해제한 뒤 변환 탭에서 피사체가 뚜렷한 사진으로 ON/OFF를 비교하면 됨
+
 ## 개명: Mathigram → 수식단순화
 - [x] 번들 표시 이름(CFBundleDisplayName)을 "수식단순화"로 변경
 - [x] Docs/PRD·TASKS 파일명을 `-Mathigram.md` → `-수식단순화.md`로 변경하고 문서 제목·본문 갱신
