@@ -23,6 +23,7 @@ Mathigram은 이 아이디어를 iPhone에서 양방향으로 체험하는 앱�
 - [Phase 0 — 프로젝트 기반](#phase-0--프로젝트-기반)
 - [Phase 1 — 수식 엔진](#phase-1--수식-엔진)
 - [Phase 2 — 그리기 모드](#phase-2--그리기-모드)
+- [Phase 3 — 변환 모드](#phase-3--변환-모드)
 - [요구 사항](#요구-사항)
 - [프로젝트 구조](#프로젝트-구조)
 - [라이선스](#라이선스)
@@ -43,7 +44,7 @@ Mathigram은 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다
 | 0 | 프로젝트 기반 (문서·타깃 설정·탭 스켈레톤) | ✅ |
 | 1 | 수식 엔진 (렉서/파서/평가기) | ✅ |
 | 2 | 그리기 모드 (수식 → 그림) | ✅ |
-| 3 | 변환 모드 (그림 → 수식) | ⬜️ |
+| 3 | 변환 모드 (그림 → 수식) | ✅ |
 | 4 | 갤러리 & 설정 | ⬜️ |
 | 5 | 검증 및 마무리 | ⬜️ |
 
@@ -100,6 +101,25 @@ xcodebuild test -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 1
 - **수식 표기 패널**과 **오류 배너**: 수식을 잘못 입력하면(괄호 불일치, 정의되지 않은 변수 등) 캔버스는 마지막 성공 결과를 유지한 채 빨간 배너로 오류를 보여준다.
 - **저장**: 우측 상단 저장 버튼이 현재 캔버스를 PNG로 사진 앱에 저장한다.
 
+## Phase 3 — 변환 모드
+
+`변환` 탭은 "**내가 그린 그림이나 촬영된 사진은 어떤 수식들의 조합으로 이루어졌을까?**"라는 질문에 답한다. 입력은 두 가지다 — 사진을 고르거나, 손가락으로 직접 윤곽을 그린다. 둘 다 같은 파이프라인으로 들어간다: 윤곽을 등간격 점으로 리샘플링 → 이산 푸리에 변환(DFT)으로 분해 → 진폭이 큰 순서로 항을 정렬 → 상위 K개 항만 더해 곡선을 다시 그린다. 이건 꾸며낸 연출이 아니라 실제로 동작하는 수학이다: 항을 늘릴수록 재구성된 곡선은 원본에 더 가까워진다.
+
+<div align="center">
+<img src="Media/Screenshots/phase3-convert-sketch-empty.png" width="23%" alt="변환 — 직접 그리기 입력 대기 화면" />
+<img src="Media/Screenshots/phase3-convert-sketch-result.png" width="23%" alt="변환 — 손으로 그린 선을 푸리에 급수로 재구성" />
+<img src="Media/Screenshots/phase3-convert-photo-star.png" width="23%" alt="변환 — 별 사진을 40개 항으로 재구성, 뾰족한 모서리까지 정확" />
+<img src="Media/Screenshots/phase3-convert-photo-fewterms.png" width="23%" alt="변환 — 같은 별 사진을 항 4개만으로 재구성, 둥글게 뭉개짐" />
+<br/>
+<sub>iPhone 16 시뮬레이터(iOS 27) · 직접 그리기 입력 / 스케치 재구성 / 별 사진 40항 재구성 / 같은 사진 4항 재구성</sub>
+</div>
+
+- **두 가지 입력**: `사진` 모드는 `PhotosPicker`로 고른 이미지를 Vision의 `DetectContoursRequest`(iOS 27 Swift 동시성 API)로 윤곽을 찾는다. `직접 그리기` 모드는 손가락으로 그린 선을 그대로 윤곽으로 쓴다 — Vision을 거치지 않고 같은 `FourierFit` 파이프라인에 바로 들어간다.
+- **진짜 이산 푸리에 변환**: `FourierFit`이 윤곽점을 복소수로 보고 DFT를 계산해 `rₖ, φₖ, k` 삼중항(진폭·위상·주파수) 최대 200개를 진폭 순으로 정렬해 둔다. "항 개수 K" 스테퍼를 움직이면 그중 상위 K개만 합산해 `x(t)=Σrₖcos(kt+φₖ)`, `y(t)=Σrₖsin(kt+φₖ)`로 즉시 다시 그린다 — 스크린샷에서 보듯 별 모양은 40항이면 뾰족한 끝까지 정확하고, 4항이면 둥글게 뭉개진 "원형 원시별"이 된다.
+- **수식 표기 패널**: 상위 8개 항을 `k, r, φ` 표로 보여주고 나머지는 "외 N개 항"으로 요약한다.
+- 레이어드 수식(Phase 2의 `LayeredFormula`)과 달리, 푸리에 재구성은 여러 곡선을 겹쳐 그리는 게 아니라 **여러 항을 하나의 곡선으로 합산**하는 것이라 전용 `FourierSeries` 타입으로 구현했다 — `MathCanvasRenderer`의 화면 맞춤(fit) 로직만 공유한다.
+- `FourierFit`/`PolylineResampler`에 대한 단위 테스트 4개를 추가했다(단위원을 근사하면 지배항이 `k=±1, r≈1`이 되는지, 항을 늘리면 재구성 오차가 실제로 줄어드는지 검증) — 전체 19개 테스트 통과.
+
 ## 요구 사항
 
 - Xcode (iOS 27 SDK 포함)
@@ -118,7 +138,7 @@ MyApp/
 ├─ MyApp.swift, ContentView.swift      # 4탭 루트
 ├─ Model/                              # AppModel, RenderSettings
 ├─ MathEngine/                         # 수식 렉서/파서/평가기, LayeredFormula, FormulaFormatter
-├─ Fourier/                            # (Phase 3) 윤곽 추출 + DFT 피팅
+├─ Fourier/                            # ContourExtractor·PolylineResampler·FourierFit·FourierSeries·FourierFormatter
 ├─ Rendering/                          # MathCanvasRenderer (수식 → 화면 좌표 Path)
 ├─ Persistence/                        # (Phase 4) SwiftData SavedArtwork
 └─ Views/                              # DrawView, ConvertView, GalleryView, SettingsView

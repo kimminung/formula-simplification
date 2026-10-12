@@ -1,4 +1,5 @@
 import Testing
+import Foundation
 import CoreGraphics
 @testable import MyApp
 
@@ -115,5 +116,64 @@ struct FormulaFormatterTests {
     @Test func rewritesConstantsAndOperatorsForDisplay() {
         #expect(FormulaFormatter.format("2*pi*t") == "2·π·t")
         #expect(FormulaFormatter.format("sqrt(t)") == "√(t)")
+    }
+}
+
+struct PolylineResamplerTests {
+    @Test func resamplesToTheRequestedCount() {
+        let points = (0..<10).map { CGPoint(x: Double($0), y: 0) }
+        let resampled = PolylineResampler.resample(points, to: 50)
+        #expect(resampled.count == 50)
+    }
+
+    @Test func preservesEndpointsOfAnOpenPolyline() {
+        let points = [CGPoint(x: 0, y: 0), CGPoint(x: 10, y: 0)]
+        let resampled = PolylineResampler.resample(points, to: 5)
+        #expect(resampled.first == CGPoint(x: 0, y: 0))
+        #expect(abs(resampled.last!.x - 8) < 1e-9)
+    }
+}
+
+struct FourierFitTests {
+    @Test func fitsAUnitCircleWithASingleDominantTerm() {
+        let n = 120
+        let points = (0..<n).map { i -> CGPoint in
+            let t = Double(i) / Double(n) * 2 * Double.pi
+            return CGPoint(x: cos(t), y: sin(t))
+        }
+        let series = FourierFit.fit(contour: points)
+        let strongest = try! #require(series.terms.first)
+        #expect(abs(strongest.k) == 1)
+        #expect(abs(strongest.amplitude - 1) < 0.05)
+
+        // Reconstructing with just that one term should still trace (close to) the unit circle.
+        for point in series.points(usingTermCount: 1) {
+            let radius = (point.x * point.x + point.y * point.y).squareRoot()
+            #expect(abs(radius - 1) < 0.05)
+        }
+    }
+
+    @Test func moreTermsReconstructTheContourMoreClosely() {
+        let n = 80
+        // A square-ish contour has sharp corners, so it needs many terms to approximate well.
+        let points = (0..<n).map { i -> CGPoint in
+            let t = Double(i) / Double(n) * 2 * Double.pi
+            let r = 1.0 / max(abs(cos(t)), abs(sin(t)))
+            return CGPoint(x: r * cos(t), y: r * sin(t))
+        }
+        let series = FourierFit.fit(contour: points)
+
+        func meanSquaredError(usingTermCount termCount: Int) -> Double {
+            let reconstructed = series.points(usingTermCount: termCount)
+            let resampledOriginal = PolylineResampler.resample(points, to: reconstructed.count)
+            var total = 0.0
+            for (a, b) in zip(reconstructed, resampledOriginal) {
+                let dx = a.x - b.x, dy = a.y - b.y
+                total += dx * dx + dy * dy
+            }
+            return total / Double(reconstructed.count)
+        }
+
+        #expect(meanSquaredError(usingTermCount: 25) < meanSquaredError(usingTermCount: 3))
     }
 }

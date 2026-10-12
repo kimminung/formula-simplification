@@ -28,11 +28,12 @@
 - [x] T2.5 결과 PNG 내보내기 (ImageRenderer → 사진 앱 저장)
 
 ## Phase 3 — 변환 모드 (그림 → 수식)
-- [ ] T3.1 PhotosPicker 연동, 선택 이미지 전처리(리사이즈/그레이스케일)
-- [ ] T3.2 ContourExtractor (VNDetectContoursRequest, 최장 윤곽 선택, 등간격 리샘플링)
-- [ ] T3.3 FourierFit (복소수 DFT → 진폭 상위 K항 추출 → LayeredFormula 변환)
-- [ ] T3.4 ConvertView: 원본/재구성 비교, 항 개수(K) 슬라이더, 수식 패널(상위 8항 표시)
-- [ ] T3.5 변환 결과 갤러리 저장 연동
+- [x] T3.1 PhotosPicker 연동 — 설계 변경: 입력을 "사진" / "직접 그리기" 두 가지로 확장 (사용자 요청: "내가 그린 그림이나 촬영된 사진에는 어떤 수식들의 조합으로 이루어졌을까?")
+- [x] T3.2 ContourExtractor (DetectContoursRequest(iOS 27 신규 Swift API), topLevelContours 중 최다 포인트 선택) + PolylineResampler(등간격 리샘플링, 사진·스케치 공용)
+- [x] T3.3 FourierFit (복소수 이산 푸리에 변환 → 진폭 상위 200항 추출) — 설계 변경: LayeredFormula(레이어 오버레이)가 아닌 전용 FourierSeries(항들을 모두 더해 선 하나로 재구성)로 구현. 수학적으로 더 정확함(레이어드 수식은 "겹쳐 그리기", 푸리에 재구성은 "항을 합산"이라 의미가 다름)
+- [x] T3.4 ConvertView: 사진/스케치 선택 → 재구성 Canvas, 항 개수(K) 슬라이더, 수식 패널(상위 8항 표시 + 외 N개)
+- [ ] T3.5 변환 결과 갤러리 저장 연동 — Phase 4로 이동(갤러리 자체가 아직 없음)
+- [x] T3.6 (추가) Swift Testing: PolylineResampler·FourierFit 단위 테스트 4개 (원 재구성 시 지배항 k=±1 검증, 항 개수 증가 시 오차 감소 검증)
 
 ## Phase 4 — 갤러리 & 설정
 - [ ] T4.1 SwiftData 모델 SavedArtwork (종류/수식 데이터/썸네일/생성일)

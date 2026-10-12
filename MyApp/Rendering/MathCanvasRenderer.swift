@@ -1,14 +1,18 @@
 import SwiftUI
 
-/// Pure data pipeline from a LayeredFormula to screen-space paths, kept free of view state
+/// Pure data pipeline from math-space polylines to screen-space paths, kept free of view state
 /// so the (potentially expensive) evaluate-and-fit step can run on a background task.
 enum MathCanvasRenderer {
-    /// Evaluates the formula, then maps every point into `rect` with equal x/y scaling,
-    /// flipping the y-axis (math-space is y-up; SwiftUI views are y-down).
+    /// Evaluates the formula, then fits every point into `rect`.
     /// `nonisolated` so this can run on a background Task.detached despite the project's
     /// default main-actor isolation.
     nonisolated static func fittedLayers(for formula: LayeredFormula, fitting rect: CGRect) throws -> [[CGPoint]] {
-        let layers = try formula.evaluate()
+        fit(layers: try formula.evaluate(), in: rect)
+    }
+
+    /// Scales/translates an arbitrary set of polylines to fit within `rect`, preserving aspect
+    /// ratio and flipping the y-axis (math-space is y-up; SwiftUI views are y-down).
+    nonisolated static func fit(layers: [[CGPoint]], in rect: CGRect) -> [[CGPoint]] {
         guard rect.width > 0, rect.height > 0, layers.contains(where: { !$0.isEmpty }) else {
             return layers
         }
