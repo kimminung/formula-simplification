@@ -14,11 +14,9 @@
 
 <br/>
 
-<video src="https://github.com/kimminung/formula-simplification/raw/main/Media/Video/demo.mp4" controls width="280" poster="Media/Screenshots/phase5-draw-composite-mix.png">
-데모 영상을 보려면 <a href="Media/Video/demo.mp4">Media/Video/demo.mp4</a>를 다운로드하세요.
-</video>
+[<img src="Media/Screenshots/demo-thumbnail.png" width="280" alt="데모 영상 재생" />](https://github.com/kimminung/formula-simplification/raw/main/Media/Video/demo.mp4)
 
-<sub>24초 소개 영상 — 아이콘 → 그리기(프리셋·수식 혼합) → 변환(스케치·사진) → 갤러리 → 설정 순으로 핵심 기능을 보여준다.</sub>
+<sub>▶︎ 위 썸네일을 누르면 24초 소개 영상이 재생됩니다 — 아이콘 → 그리기(프리셋·수식 혼합) → 변환(스케치·사진) → 갤러리 → 설정 순으로 핵심 기능을 보여준다.</sub>
 
 </div>
 
