@@ -33,4 +33,30 @@ nonisolated enum FourierFit {
         terms.sort { $0.amplitude > $1.amplitude }
         return FourierSeries(terms: Array(terms.prefix(maxTerms)), sampleCount: 360)
     }
+
+    /// Fits every shape independently. All shapes must share one coordinate frame (e.g. the
+    /// same normalized image space, or the same canvas) so their relative placement survives:
+    /// each series' k=0 term stores that shape's own center.
+    static func fit(shapes: [[CGPoint]]) -> [FourierSeries] {
+        shapes.map { fit(contour: $0) }
+    }
+
+    /// A DFT assumes the signal is periodic, so an open stroke would otherwise get a straight
+    /// "rubber-band" segment snapping its end back to its start. Walking the stroke forward and
+    /// then backward makes it periodic while only ever tracing the line the user actually drew.
+    static func closedLoop(from points: [CGPoint]) -> [CGPoint] {
+        guard isOpen(points) else { return points }
+        let interior = points.dropFirst().dropLast().reversed()
+        return points + interior
+    }
+
+    static func isOpen(_ points: [CGPoint]) -> Bool {
+        guard points.count > 2, let first = points.first, let last = points.last else { return false }
+        var length = 0.0
+        for i in 1..<points.count {
+            length += hypot(Double(points[i].x - points[i - 1].x), Double(points[i].y - points[i - 1].y))
+        }
+        let gap = hypot(Double(last.x - first.x), Double(last.y - first.y))
+        return length > 0 && gap > length * 0.12
+    }
 }

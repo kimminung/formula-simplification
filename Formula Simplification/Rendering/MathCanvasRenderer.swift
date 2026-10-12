@@ -18,8 +18,9 @@ enum MathCanvasRenderer {
     }
 
     /// Scales/translates an arbitrary set of polylines to fit within `rect`, preserving aspect
-    /// ratio and flipping the y-axis (math-space is y-up; SwiftUI views are y-down).
-    nonisolated static func fit(layers: [[CGPoint]], in rect: CGRect) -> [[CGPoint]] {
+    /// ratio. `flipY` converts math-space (y-up) to SwiftUI space (y-down); pass `false` for
+    /// inputs that are already screen-oriented, such as finger strokes or image contours.
+    nonisolated static func fit(layers: [[CGPoint]], in rect: CGRect, flipY: Bool = true) -> [[CGPoint]] {
         guard rect.width > 0, rect.height > 0, layers.contains(where: { !$0.isEmpty }) else {
             return layers
         }
@@ -39,12 +40,13 @@ enum MathCanvasRenderer {
         let midY = (minY + maxY) / 2
         let originX = Double(rect.midX)
         let originY = Double(rect.midY)
+        let ySign: Double = flipY ? -1 : 1
 
         return layers.map { layer in
             layer.map { point in
                 CGPoint(
                     x: originX + (point.x - midX) * scale,
-                    y: originY - (point.y - midY) * scale
+                    y: originY + ySign * (point.y - midY) * scale
                 )
             }
         }

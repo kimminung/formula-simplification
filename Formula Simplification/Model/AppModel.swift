@@ -4,9 +4,9 @@ enum AppTab: Hashable {
     case draw, convert, gallery, settings
 }
 
-/// A Convert result (series + the term count that was in use) requested from the Gallery.
+/// A Convert result (one series per shape + the term count in use) requested from the Gallery.
 struct PendingConvertLoad: Equatable {
-    let series: FourierSeries
+    let shapes: [FourierSeries]
     let termCount: Int
 }
 

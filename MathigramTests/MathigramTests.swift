@@ -1,7 +1,7 @@
 import Testing
 import Foundation
 import CoreGraphics
-@testable import MyApp
+@testable import Formula_Simplification
 
 struct MathLexerTests {
     @Test func tokenizesNumbersIdentifiersAndOperators() throws {
@@ -203,5 +203,49 @@ struct FourierFitTests {
         }
 
         #expect(meanSquaredError(usingTermCount: 25) < meanSquaredError(usingTermCount: 3))
+    }
+}
+
+struct MultiShapeFitTests {
+    @Test func fitsOneSeriesPerShapeAndKeepsRelativePlacement() {
+        func circle(center: CGPoint, radius: Double) -> [CGPoint] {
+            (0..<64).map { i in
+                let t = Double(i) / 64 * 2 * Double.pi
+                return CGPoint(x: center.x + radius * cos(t), y: center.y + radius * sin(t))
+            }
+        }
+        let left = circle(center: CGPoint(x: -3, y: 0), radius: 1)
+        let right = circle(center: CGPoint(x: 3, y: 0), radius: 0.5)
+        let shapes = FourierFit.fit(shapes: [left, right])
+        #expect(shapes.count == 2)
+
+        // The k=0 term is each shape's own center, so the two shapes don't collapse together.
+        let leftCenter = try! #require(shapes[0].terms.first { $0.k == 0 })
+        let rightCenter = try! #require(shapes[1].terms.first { $0.k == 0 })
+        #expect(abs(leftCenter.amplitude * cos(leftCenter.phase) - (-3)) < 0.05)
+        #expect(abs(rightCenter.amplitude * cos(rightCenter.phase) - 3) < 0.05)
+    }
+
+    @Test func openStrokeIsDetectedAndClosedByWalkingBack() {
+        let stroke = (0..<20).map { CGPoint(x: Double($0), y: Double($0) * 0.5) }
+        #expect(FourierFit.isOpen(stroke))
+        let loop = FourierFit.closedLoop(from: stroke)
+        #expect(loop.count == 2 * stroke.count - 2)
+        // The loop returns to where it started, so the DFT sees a periodic signal.
+        #expect(loop.last == stroke[1])
+        #expect(!FourierFit.isOpen(loop))
+    }
+
+    @Test func closedContourIsLeftAlone() {
+        let square = [CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 0), CGPoint(x: 1, y: 1), CGPoint(x: 0, y: 1), CGPoint(x: 0, y: 0.01)]
+        #expect(!FourierFit.isOpen(square))
+        #expect(FourierFit.closedLoop(from: square).count == square.count)
+    }
+
+    @Test func multiShapeNotationSummarizesShapeCount() {
+        let shape = FourierFit.fit(contour: (0..<16).map { CGPoint(x: cos(Double($0) / 16 * 2 * .pi), y: sin(Double($0) / 16 * 2 * .pi)) })
+        let text = FourierFormatter.notation(for: [shape, shape, shape, shape], termCount: 5)
+        #expect(text.contains("도형 4개"))
+        #expect(text.contains("외 도형 1개"))
     }
 }

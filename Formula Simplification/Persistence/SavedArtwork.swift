@@ -41,19 +41,22 @@ final class SavedArtwork {
         return components
     }
 
-    func apply(series: FourierSeries, termCount: Int) {
-        fourierTermsJSON = try? JSONEncoder().encode(series.terms)
-        fourierSampleCount = series.sampleCount
+    func apply(shapes: [FourierSeries], termCount: Int) {
+        fourierTermsJSON = try? JSONEncoder().encode(shapes)
+        fourierSampleCount = shapes.first?.sampleCount
         fourierTermCount = termCount
     }
 
-    var storedSeries: (series: FourierSeries, termCount: Int)? {
-        guard let data = fourierTermsJSON,
-              let sampleCount = fourierSampleCount,
-              let termCount = fourierTermCount,
-              let terms = try? JSONDecoder().decode([FourierTerm].self, from: data) else {
-            return nil
+    var storedShapes: (shapes: [FourierSeries], termCount: Int)? {
+        guard let data = fourierTermsJSON, let termCount = fourierTermCount else { return nil }
+        let decoder = JSONDecoder()
+        if let shapes = try? decoder.decode([FourierSeries].self, from: data), !shapes.isEmpty {
+            return (shapes, termCount)
         }
-        return (FourierSeries(terms: terms, sampleCount: sampleCount), termCount)
+        // Artworks saved before multi-shape support stored a single shape's bare term list.
+        if let terms = try? decoder.decode([FourierTerm].self, from: data), let sampleCount = fourierSampleCount {
+            return ([FourierSeries(terms: terms, sampleCount: sampleCount)], termCount)
+        }
+        return nil
     }
 }

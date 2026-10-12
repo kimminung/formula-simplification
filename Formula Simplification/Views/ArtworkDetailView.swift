@@ -58,7 +58,7 @@ struct ArtworkDetailView: View {
     private var canReload: Bool {
         switch artwork.kind {
         case .draw: artwork.storedComponents != nil
-        case .convert: artwork.storedSeries != nil
+        case .convert: artwork.storedShapes != nil
         }
     }
 
@@ -70,8 +70,8 @@ struct ArtworkDetailView: View {
                 appModel.selectedTab = .draw
             }
         case .convert:
-            if let stored = artwork.storedSeries {
-                appModel.pendingConvertLoad = PendingConvertLoad(series: stored.series, termCount: stored.termCount)
+            if let stored = artwork.storedShapes {
+                appModel.pendingConvertLoad = PendingConvertLoad(shapes: stored.shapes, termCount: stored.termCount)
                 appModel.selectedTab = .convert
             }
         }
