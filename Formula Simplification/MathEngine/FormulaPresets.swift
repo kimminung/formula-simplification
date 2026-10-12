@@ -4,13 +4,12 @@ struct FormulaPreset: Identifiable {
     let id = UUID()
     let title: String
     /// One or more LayeredFormula components overlaid into a single picture — mixing several
-    /// different formulas into one image is exactly the Naderi Yeganeh technique.
+    /// different formulas into one image.
     let components: [LayeredFormula]
 }
 
-/// Starting points spanning single classic curves, Naderi-Yeganeh-style layered bundles (many
-/// overlapping curves from one formula), and composites that mix several *different* formulas
-/// into one picture.
+/// Starting points spanning single classic curves, layered bundles (many overlapping curves
+/// from one formula), and composites that mix several *different* formulas into one picture.
 enum FormulaPresets {
     static let all: [FormulaPreset] = [
         FormulaPreset(title: "하트 곡선", components: [LayeredFormula(

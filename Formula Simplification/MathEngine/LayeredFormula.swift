@@ -3,7 +3,7 @@ import Foundation
 
 /// One formula component: x(t,k) and y(t,k) over t, repeated for k = 0..<kCount and overlaid.
 /// A full artwork is an array of these — mixing several components (each its own curve family)
-/// into a single picture is exactly the Naderi Yeganeh technique.
+/// into a single picture.
 nonisolated struct LayeredFormula: Identifiable, Equatable, Sendable, Codable {
     var id = UUID()
     var xExpression: String

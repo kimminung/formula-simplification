@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Owns the components of one artwork (one or more LayeredFormula pieces mixed together,
-/// Naderi-Yeganeh style) and its debounced, background-evaluated render.
+/// Owns the components of one artwork (one or more LayeredFormula pieces mixed together)
+/// and its debounced, background-evaluated render.
 @Observable
 final class DrawModel {
     var components: [LayeredFormula]

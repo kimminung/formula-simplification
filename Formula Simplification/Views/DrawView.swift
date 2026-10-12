@@ -3,7 +3,7 @@ import SwiftData
 import UIKit
 
 /// Formula → image. Edits one or more LayeredFormula components — mixed together into a single
-/// picture, Naderi-Yeganeh style — and renders them live via MathCanvasRenderer.
+/// picture — and renders them live via MathCanvasRenderer.
 struct DrawView: View {
     @Environment(AppModel.self) private var appModel
     @Environment(\.modelContext) private var modelContext
