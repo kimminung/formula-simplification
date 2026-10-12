@@ -12,13 +12,13 @@
 - [x] T0.7 빌드 확인 + iPhone 16 시뮬레이터 스크린샷 → README 반영
 
 ## Phase 1 — 수식 엔진 (MathEngine)
-- [ ] T1.1 토큰/위치 타입, Lexer (숫자·식별자·기호·공백)
-- [ ] T1.2 AST 정의 (Expr: 리터럴/변수/단항/이항/함수호출)
-- [ ] T1.3 Parser (우선순위: `+ -` < `* /` < 단항 `-` < `^`, 괄호)
-- [ ] T1.4 Evaluator (변수 바인딩 t/k/n, 내장 함수·상수, 0 나눗셈·정의역 오류 처리)
-- [ ] T1.5 LayeredFormula 모델 (x(t,k), y(t,k), tRange, kCount, colorRule)
-- [ ] T1.6 FormulaFormatter (입력 수식 → 읽기 쉬운 수학 표기: π, 위/아래 첨자)
-- [ ] T1.7 Swift Testing 유닛 테스트 (Lexer/Parser/Evaluator/LayeredFormula)
+- [x] T1.1 토큰/위치 타입, Lexer (숫자·식별자·기호·공백)
+- [x] T1.2 AST 정의 (Expr: 리터럴/변수/단항/이항/함수호출)
+- [x] T1.3 Parser (우선순위: `+ -` < `* /` < 단항 `-` < `^`, 괄호)
+- [x] T1.4 Evaluator (변수 바인딩 t/k/n, 내장 함수·상수, 0 나눗셈·정의역 오류 처리)
+- [x] T1.5 LayeredFormula 모델 (x(t,k), y(t,k), tRange, kCount) — colorRule은 Phase 2에서 RenderSettings와 함께 연결
+- [x] T1.6 FormulaFormatter (입력 수식 → 읽기 쉬운 수학 표기: π, √, ·)
+- [x] T1.7 Swift Testing 유닛 테스트 (Lexer/Parser/Evaluator/LayeredFormula/FormulaFormatter) — MathigramTests 타깃 신설, 15개 테스트 통과
 
 ## Phase 2 — 그리기 모드 (수식 → 그림)
 - [ ] T2.1 MathCanvasRenderer (LayeredFormula → [Path], 백그라운드 평가)

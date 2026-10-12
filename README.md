@@ -21,6 +21,7 @@ Mathigram은 이 아이디어를 iPhone에서 양방향으로 체험하는 앱�
 - [이게 뭔가요](#이게-뭔가요)
 - [진행 상황](#진행-상황)
 - [Phase 0 — 프로젝트 기반](#phase-0--프로젝트-기반)
+- [Phase 1 — 수식 엔진](#phase-1--수식-엔진)
 - [요구 사항](#요구-사항)
 - [프로젝트 구조](#프로젝트-구조)
 - [라이선스](#라이선스)
@@ -39,7 +40,7 @@ Mathigram은 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다
 | Phase | 내용 | 상태 |
 |---|---|:-:|
 | 0 | 프로젝트 기반 (문서·타깃 설정·탭 스켈레톤) | ✅ |
-| 1 | 수식 엔진 (렉서/파서/평가기) | ⬜️ |
+| 1 | 수식 엔진 (렉서/파서/평가기) | ✅ |
 | 2 | 그리기 모드 (수식 → 그림) | ⬜️ |
 | 3 | 변환 모드 (그림 → 수식) | ⬜️ |
 | 4 | 갤러리 & 설정 | ⬜️ |
@@ -63,6 +64,22 @@ Mathigram은 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다
 - **갤러리**: SwiftData 저장소는 Phase 4에서 연결된다.
 - **설정**: 선 색상·굵기·색상 순환·배경 토글은 이미 실제로 동작하며, `그리기`/`변환` 캔버스가 공유할 `RenderSettings` 모델에 바로 반영된다.
 
+## Phase 1 — 수식 엔진
+
+`그리기`/`변환` 두 모드가 공유할 **MathEngine**을 추가했다. 사용자가 입력하는 `x(t,k)`, `y(t,k)` 같은 문자열을 임의 코드 실행 없이 안전하게 해석·평가하는 자체 렉서/파서/평가기다.
+
+- **렉서/파서**: 숫자·식별자·`+ - * / ^`·괄호·쉼표를 토큰화하고, `+ -` < `* /` < 단항 `-` < `^`(우결합) 우선순위로 재귀 하강 파싱한다. 모든 구문 오류는 열(column) 번호를 포함한다.
+- **평가기**: 변수 `t`(매개변수) · `k`(레이어 인덱스) · `n`(총 레이어 수)과 상수 `pi` · `e`, 함수 `sin cos tan asin acos atan atan2 sqrt abs exp log min max floor ceil round`을 지원한다. 0으로 나누기·`sqrt`의 음수 인자·정의되지 않은 변수는 즉시 오류로 보고한다.
+- **LayeredFormula**: 하나의 수식을 `k = 0 … kCount-1`만큼 반복해 겹쳐진 폴리라인 배열로 만든다 (레이어 최대 4,000개 · 레이어당 샘플 최대 400개로 자동 클램프) — Naderi Yeganeh 스타일 "수천 개 선으로 이루어진 그림" 기법의 핵심이다.
+- **FormulaFormatter**: 입력 문자열을 `pi → π`, `sqrt → √`, `* → ·` 같은 읽기 쉬운 수학 표기로 바꾼다.
+
+새 `MathigramTests` 타깃(Swift Testing)에 렉서·파서·평가기·LayeredFormula·포매터를 검증하는 테스트 15개를 추가했고 전부 통과한다. 아직 화면에 연결되지 않은 순수 엔진 단계라 새 스크린샷은 없다 — Phase 2에서 `그리기` 탭이 이 엔진으로 실시간 렌더링을 하면 눈에 보이는 변화가 생긴다.
+
+```bash
+# Xcode에서 Cmd+U, 또는 커맨드라인에서
+xcodebuild test -scheme MyApp -destination 'platform=iOS Simulator,name=iPhone 16'
+```
+
 ## 요구 사항
 
 - Xcode (iOS 27 SDK 포함)
@@ -80,7 +97,7 @@ open "Untitled Project.xcodeproj"
 MyApp/
 ├─ MyApp.swift, ContentView.swift      # 4탭 루트
 ├─ Model/                              # AppModel, RenderSettings
-├─ MathEngine/                         # (Phase 1) 수식 렉서/파서/평가기, 프리셋
+├─ MathEngine/                         # 수식 렉서/파서/평가기, LayeredFormula, FormulaFormatter
 ├─ Fourier/                            # (Phase 3) 윤곽 추출 + DFT 피팅
 ├─ Rendering/                          # (Phase 2) MathCanvasRenderer
 ├─ Persistence/                        # (Phase 4) SwiftData SavedArtwork
