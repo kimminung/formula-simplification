@@ -1,12 +1,12 @@
-# TASKS — Mathigram (수식그램)
+# TASKS — 수식단순화 (Formula Simplification)
 
 상태 표기: `[x]` 완료 · `[ ]` 미완료 · `[~]` 부분 완료 / 검증 필요
 
 ## Phase 0 — 프로젝트 준비
-- [x] T0.1 PRD 작성 (`Docs/PRD-Mathigram.md`)
+- [x] T0.1 PRD 작성 (`Docs/PRD-수식단순화.md`)
 - [x] T0.2 태스크 문서 작성 (이 파일)
 - [x] T0.3 타깃을 iPhone 전용으로 설정 (TARGETED_DEVICE_FAMILY=1, SUPPORTED_PLATFORMS=iphoneos/iphonesimulator)
-- [x] T0.4 번들 표시 이름 "Mathigram", 사진 보관함 접근 Info.plist 설명 추가
+- [x] T0.4 번들 표시 이름 "수식단순화", 사진 보관함 접근 Info.plist 설명 추가 (이후 "수식단순화"로 개명)
 - [x] T0.5 AppModel(@Observable) + 4탭(그리기/변환/갤러리/설정) 스켈레톤
 - [x] T0.6 README/LICENSE(Apache 2.0)/.gitignore/.gitattributes, git init
 - [x] T0.7 빌드 확인 + iPhone 16 시뮬레이터 스크린샷 → README 반영
@@ -18,7 +18,7 @@
 - [x] T1.4 Evaluator (변수 바인딩 t/k/n, 내장 함수·상수, 0 나눗셈·정의역 오류 처리)
 - [x] T1.5 LayeredFormula 모델 (x(t,k), y(t,k), tRange, kCount) — colorRule은 Phase 2에서 RenderSettings와 함께 연결
 - [x] T1.6 FormulaFormatter (입력 수식 → 읽기 쉬운 수학 표기: π, √, ·)
-- [x] T1.7 Swift Testing 유닛 테스트 (Lexer/Parser/Evaluator/LayeredFormula/FormulaFormatter) — MathigramTests 타깃 신설, 15개 테스트 통과
+- [x] T1.7 Swift Testing 유닛 테스트 (Lexer/Parser/Evaluator/LayeredFormula/FormulaFormatter) — MathigramTests 타깃 신설(앱 개명 이전에 만들어져 타깃명은 유지, 사용자에게 보이지 않는 내부 테스트 번들명), 15개 테스트 통과
 
 ## Phase 2 — 그리기 모드 (수식 → 그림)
 - [x] T2.1 MathCanvasRenderer (LayeredFormula → [Path], 백그라운드 평가, 자동 맞춤·y축 반전)
@@ -50,3 +50,10 @@
 
 ### 알려진 사소한 관찰
 - 자동화 테스트 중 설정 탭의 `ColorPicker` 스와치가 간헐적으로 첫 탭에 반응하지 않고 몇 번의 상호작용 후에 열린 사례가 1건 있었다(이후 정상 동작). SwiftUI 표준 `ColorPicker`의 팝오버 히트테스트가 시뮬레이터 자동화 환경에서 간헐적으로 지연되는 것으로 보이며, 실제 동작 로직 결함은 아니라고 판단해 별도 수정 없이 기록만 남긴다.
+
+## 개명: Mathigram → 수식단순화
+- [x] 번들 표시 이름(CFBundleDisplayName)을 "수식단순화"로 변경
+- [x] Docs/PRD·TASKS 파일명을 `-Mathigram.md` → `-수식단순화.md`로 변경하고 문서 제목·본문 갱신
+- [x] README.md 제목·본문의 "Mathigram(수식그램)" 표기를 "수식단순화 (Formula Simplification)"로 갱신
+- [x] SettingsView의 앱 이름 표시를 "수식단순화"로 갱신
+- Xcode 타깃/모듈명(`MyApp`)과 테스트 타깃명(`MathigramTests`)은 사용자에게 보이지 않는 내부 식별자라 변경하지 않음 — 변경 시 번들 ID·스킴·`@testable import` 등 연쇄 수정이 필요해 위험 대비 실익이 낮다고 판단

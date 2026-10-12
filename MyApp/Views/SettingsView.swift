@@ -26,7 +26,7 @@ struct SettingsView: View {
                 }
 
                 Section("정보") {
-                    LabeledContent("앱", value: "Mathigram")
+                    LabeledContent("앱", value: "수식단순화")
                     LabeledContent("버전", value: "0.1")
                     Text("수식으로 그리고, 그림을 수식으로. Apache License 2.0으로 배포됩니다.")
                         .font(.caption)

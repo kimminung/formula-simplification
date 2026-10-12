@@ -1,11 +1,11 @@
 <div align="center">
 
-# Mathigram (수식그램)
+# 수식단순화 (Formula Simplification)
 
 **수식으로 그리고, 그림을 수식으로.**
 
 이란의 수학자 Hamid Naderi Yeganeh는 수만 개의 곡선을 정의하는 수식만으로 얼굴·동물 같은 구체적인 그림을 그려낸다.
-Mathigram은 이 아이디어를 iPhone에서 양방향으로 체험하는 앱이다 — 수식을 쓰면 그림이 나오고, 사진을 넣으면 그 윤곽을 근사하는 실제 수식이 나온다.
+수식단순화는 이 아이디어를 iPhone에서 양방향으로 체험하는 앱이다 — 수식을 쓰면 그림이 나오고, 사진을 넣으면 그 윤곽을 근사하는 실제 수식이 나온다.
 
 [![Platform](https://img.shields.io/badge/platform-iOS%2027%20(iPhone)-black?logo=apple)](#요구-사항)
 [![Swift](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](#)
@@ -32,12 +32,12 @@ Mathigram은 이 아이디어를 iPhone에서 양방향으로 체험하는 앱�
 
 ## 이게 뭔가요
 
-Mathigram은 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다.
+수식단순화는 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다.
 
 1. **그리기 (수식 → 그림)**: 매개변수 `t`와 레이어 인덱스 `k`에 대한 수식 `x(t,k)`, `y(t,k)`를 입력하면, 앱이 `k`에 대해 수백~수천 번 반복해 곡선을 겹쳐 그린다. 선 하나하나가 모여 하나의 그림이 된다.
 2. **변환 (그림 → 수식)**: 사진을 가져오면 Vision으로 윤곽을 추출하고, 이산 푸리에 변환(DFT)으로 그 윤곽을 근사하는 실제 삼각함수 급수 `x(t) = Σ rₖ·cos(kt+φₖ)`를 계산해 보여준다. 항의 개수를 조절하면 그림이 단순해지거나 원본에 가까워진다.
 
-자세한 기능 요구사항은 [`Docs/PRD-Mathigram.md`](Docs/PRD-Mathigram.md), 진행 상황은 [`Docs/TASKS-Mathigram.md`](Docs/TASKS-Mathigram.md)에 있다.
+자세한 기능 요구사항은 [`Docs/PRD-수식단순화.md`](Docs/PRD-수식단순화.md), 진행 상황은 [`Docs/TASKS-수식단순화.md`](Docs/TASKS-수식단순화.md)에 있다.
 
 ## 진행 상황
 
@@ -77,7 +77,7 @@ Mathigram은 두 가지 방향의 변환을 제공하는 iPhone 전용 앱이다
 - **LayeredFormula**: 하나의 수식을 `k = 0 … kCount-1`만큼 반복해 겹쳐진 폴리라인 배열로 만든다 (레이어 최대 4,000개 · 레이어당 샘플 최대 400개로 자동 클램프) — Naderi Yeganeh 스타일 "수천 개 선으로 이루어진 그림" 기법의 핵심이다.
 - **FormulaFormatter**: 입력 문자열을 `pi → π`, `sqrt → √`, `* → ·` 같은 읽기 쉬운 수학 표기로 바꾼다.
 
-새 `MathigramTests` 타깃(Swift Testing)에 렉서·파서·평가기·LayeredFormula·포매터를 검증하는 테스트 15개를 추가했고 전부 통과한다. 아직 화면에 연결되지 않은 순수 엔진 단계라 새 스크린샷은 없다 — Phase 2에서 `그리기` 탭이 이 엔진으로 실시간 렌더링을 하면 눈에 보이는 변화가 생긴다.
+새 `MathigramTests` 타깃(Swift Testing, 앱 개명 이전에 만들어진 내부 테스트 번들명으로 사용자에게는 보이지 않는다)에 렉서·파서·평가기·LayeredFormula·포매터를 검증하는 테스트 15개를 추가했고 전부 통과한다. 아직 화면에 연결되지 않은 순수 엔진 단계라 새 스크린샷은 없다 — Phase 2에서 `그리기` 탭이 이 엔진으로 실시간 렌더링을 하면 눈에 보이는 변화가 생긴다.
 
 ```bash
 # Xcode에서 Cmd+U, 또는 커맨드라인에서

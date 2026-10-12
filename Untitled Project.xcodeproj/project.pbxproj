@@ -324,7 +324,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Mathigram;
+				INFOPLIST_KEY_CFBundleDisplayName = "수식단순화";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "그린 그림을 사진 앱에 저장하려면 추가 권한이 필요합니다.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "사진을 가져와 윤곽을 수식으로 변환하려면 사진 보관함 접근 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -369,7 +369,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Mathigram;
+				INFOPLIST_KEY_CFBundleDisplayName = "수식단순화";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "그린 그림을 사진 앱에 저장하려면 추가 권한이 필요합니다.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "사진을 가져와 윤곽을 수식으로 변환하려면 사진 보관함 접근 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
