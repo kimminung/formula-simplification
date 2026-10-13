@@ -317,6 +317,7 @@
 		000000000000000111000000 /* Debug configuration for PBXNativeTarget "Formula Simplification" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5Z8G42AVKD;
@@ -362,6 +363,7 @@
 		000000000000000112000000 /* Release configuration for PBXNativeTarget "Formula Simplification" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5Z8G42AVKD;
